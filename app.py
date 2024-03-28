@@ -2,6 +2,35 @@ from flask import Flask, render_template, request, redirect
 
 app = Flask(__name__)
 
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/workouts')
+def workouts():
+    return render_template('workouts.html')
+
+@app.route('/macrotracker')
+def macrotracker():
+    return render_template('macrotracker.html')
+
+@app.route('/forum')
+def forum():
+    return render_template('forum.html')
+
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+@app.route('/user-registration')
+def userregistration():
+    return render_template('user-registration.html')
+
+'''
    
 def add_exercise(self, exercise_name, duration, calories_burned):
     """
@@ -45,6 +74,8 @@ def suggest_exercise(self):
     Suggest an exercise based on user preferences or goals.
     """
     pass
+
+'''
 
 
 if __name__ == "__main__":
