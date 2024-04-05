@@ -1,12 +1,7 @@
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact Us</title>
-</head>
-<body>
+{% extends "_layout.html" %}
+
+{% block content %}
 
 <h2>Contact Us</h2>
 <form action="submit_contact.php" method="POST">
@@ -29,3 +24,4 @@
 </html>
 
 
+{% endblock %}

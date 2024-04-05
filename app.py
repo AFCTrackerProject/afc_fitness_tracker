@@ -30,6 +30,10 @@ def about():
 def userregistration():
     return render_template('user-registration.html')
 
+@app.route('/signup')
+def signup():
+    return render_template('signup.html')
+
 '''
    
 def add_exercise(self, exercise_name, duration, calories_burned):
