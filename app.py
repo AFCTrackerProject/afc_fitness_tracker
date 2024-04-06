@@ -2,31 +2,31 @@ from flask import Flask, render_template, request, redirect
 
 app = Flask(__name__)
 
-@app.route('/')
+@app.get('/')
 def index():
     return render_template('index.html')
 
-@app.route('/workouts')
+@app.get('/workouts')
 def workouts():
     return render_template('workouts.html')
 
-@app.route('/macrotracker')
+@app.get('/macrotracker')
 def macrotracker():
     return render_template('macrotracker.html')
 
-@app.route('/forum')
+@app.get('/forum')
 def forum():
     return render_template('forum.html')
 
-@app.route('/contact')
+@app.get('/contact')
 def contact():
     return render_template('contact.html')
 
-@app.route('/about')
+@app.get('/about')
 def about():
     return render_template('about.html')
 
-@app.route('/user-registration')
+@app.get('/user-registration')
 def userregistration():
     return render_template('user-registration.html')
 
