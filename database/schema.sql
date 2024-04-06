@@ -1,5 +1,4 @@
--- User Table
-CREATE TABLE User (
+CREATE TABLE UserTable (
     UserID INT PRIMARY KEY,
     Username VARCHAR(50) UNIQUE NOT NULL,
     Password VARCHAR(100) NOT NULL,
@@ -7,10 +6,10 @@ CREATE TABLE User (
     FirstName VARCHAR(50),
     LastName VARCHAR(50),
     DateOfBirth DATE,
-    Gender ENUM('Male', 'Female', 'Other'),
+    Gender VARCHAR(10),
     Height FLOAT,
     Weight FLOAT,
-    JoinDate DATETIME
+    JoinDate TIMESTAMP
 );
 
 -- User Stats Table
@@ -20,8 +19,8 @@ CREATE TABLE UserStats (
     TotalSteps INT,
     TotalDistance FLOAT,
     TotalWorkouts INT,
-    LastActiveDate DATETIME,
-    FOREIGN KEY (UserID) REFERENCES User(UserID)
+    LastActiveDate TIMESTAMP,
+    FOREIGN KEY (UserID) REFERENCES UserTable(UserID)
 );
 
 -- Workout History Table
@@ -31,9 +30,9 @@ CREATE TABLE WorkoutHistory (
     WorkoutType VARCHAR(50),
     Duration INT,
     CaloriesBurned FLOAT,
-    StartDateTime DATETIME,
-    EndDateTime DATETIME,
-    FOREIGN KEY (UserID) REFERENCES User(UserID)
+    StartDateTime TIMESTAMP,
+    EndDateTime TIMESTAMP,
+    FOREIGN KEY (UserID) REFERENCES UserTable(UserID)
 );
 
 -- Nutrition Log Table
@@ -44,7 +43,7 @@ CREATE TABLE NutritionLog (
     Quantity FLOAT,
     CaloriesConsumed INT,
     LogDate DATE,
-    FOREIGN KEY (UserID) REFERENCES User(UserID)
+    FOREIGN KEY (UserID) REFERENCES UserTable(UserID)
 );
 
 -- Friends Table
@@ -52,8 +51,8 @@ CREATE TABLE Friends (
     FriendshipID INT PRIMARY KEY,
     UserID1 INT,
     UserID2 INT,
-    FOREIGN KEY (UserID1) REFERENCES User(UserID),
-    FOREIGN KEY (UserID2) REFERENCES User(UserID)
+    FOREIGN KEY (UserID1) REFERENCES UserTable(UserID),
+    FOREIGN KEY (UserID2) REFERENCES UserTable(UserID)
 );
 
 -- Messages Table
@@ -62,9 +61,9 @@ CREATE TABLE Messages (
     SenderUserID INT,
     ReceiverUserID INT,
     MessageContent TEXT,
-    Timestamp DATETIME,
-    FOREIGN KEY (SenderUserID) REFERENCES User(UserID),
-    FOREIGN KEY (ReceiverUserID) REFERENCES User(UserID)
+    Timestamp TIMESTAMP,
+    FOREIGN KEY (SenderUserID) REFERENCES UserTable(UserID),
+    FOREIGN KEY (ReceiverUserID) REFERENCES UserTable(UserID)
 );
 
 -- Achievements Table
@@ -74,5 +73,5 @@ CREATE TABLE Achievements (
     AchievementName VARCHAR(100),
     AchievementDescription TEXT,
     AchievementDate DATE,
-    FOREIGN KEY (UserID) REFERENCES User(UserID)
+    FOREIGN KEY (UserID) REFERENCES UserTable(UserID)
 );
