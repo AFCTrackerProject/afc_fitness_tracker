@@ -38,6 +38,22 @@ def signup():
 def login():
     return render_template('login.html')
 
+@app.route('/chest')
+def chest():
+    return redirect('https://www.muscleandstrength.com/workouts/chest')
+
+@app.route('/back')
+def back():
+    return redirect('https://www.muscleandstrength.com/workouts/back')
+
+@app.route('/bicep')
+def bicep():
+    return redirect('https://www.muscleandstrength.com/workouts/biceps')
+
+@app.route('/legs')
+def legs():
+    return redirect('https://www.muscleandstrength.com/workouts/legs')
+
 '''
    
 def add_exercise(self, exercise_name, duration, calories_burned):
