@@ -1,23 +1,21 @@
-# Use an existing Docker image as a base
-FROM ubuntu:20.04
+# Use an official Python runtime as a parent image
+FROM python:3.12-slim
 
-# Set the working directory inside the container
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy the current directory (where your project files are) into the container at /app
-COPY . .
+# Copy the current directory contents into the container at /app
+COPY . /app
 
-# Install any dependencies your project requires
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    && rm -rf /var/lib/apt/lists/*
+# Install any needed packages specified in requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Python dependencies
-RUN pip3 install -r requirements.txt
+# Make port 5000 available to the world outside this container
+EXPOSE 5000
 
-# Expose the port your app runs on
-EXPOSE 8080
+# Define environment variable
+ENV FLASK_APP=app.py
+ENV FLASK_RUN_HOST=0.0.0.0
 
-# Command to run your application
-CMD ["python3", "app.py"]
+# Run app.py when the container launches
+CMD ["flask", "run"]

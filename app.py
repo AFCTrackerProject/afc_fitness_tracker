@@ -9,6 +9,14 @@ import re
 
 app = Flask(__name__)
 
+# Placeholder for storing macro targets and daily intake
+user_macros = {
+    'targets': {'protein': 0, 'carbs': 0, 'fats': 0},
+    'daily_intake': {'protein': 0, 'carbs': 0, 'fats': 0}
+}
+
+
+
 secret_key = secrets.token_hex(16)
 
 # Configure SQLAlchemy
@@ -43,9 +51,24 @@ def index():
 def workouts():
     return render_template('workouts.html')
 
-@app.get('/macrotracker')
+@app.route('/macrotracker', methods=['GET', 'POST'])
 def macrotracker():
-    return render_template('macrotracker.html')
+    if request.method == 'POST':
+        if 'set_targets' in request.form:
+            # Logic for setting targets remains the same
+            user_macros['targets'] = {
+                'protein': int(request.form.get('target_protein', 0)),
+                'carbs': int(request.form.get('target_carbs', 0)),
+                'fats': int(request.form.get('target_fats', 0))
+            }
+        elif 'log_intake' in request.form:
+            # Adjusted logic for accumulating daily intake
+            user_macros['daily_intake']['protein'] += int(request.form.get('daily_protein', 0))
+            user_macros['daily_intake']['carbs'] += int(request.form.get('daily_carbs', 0))
+            user_macros['daily_intake']['fats'] += int(request.form.get('daily_fats', 0))
+        return redirect(url_for('macrotracker'))
+   
+    return render_template('macrotracker.html', user_macros=user_macros)
 
 @app.get('/forum')
 def forum():
@@ -113,6 +136,22 @@ def login():
             return 'Logged in successfully'
 
     return render_template('login.html')
+
+@app.route('/chest')
+def chest():
+    return redirect('https://www.muscleandstrength.com/workouts/chest')
+
+@app.route('/back')
+def back():
+    return redirect('https://www.muscleandstrength.com/workouts/back')
+
+@app.route('/bicep')
+def bicep():
+    return redirect('https://www.muscleandstrength.com/workouts/biceps')
+
+@app.route('/legs')
+def legs():
+    return redirect('https://www.muscleandstrength.com/workouts/legs')
 
 '''
    
