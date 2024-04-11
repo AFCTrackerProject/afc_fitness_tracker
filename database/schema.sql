@@ -1,3 +1,4 @@
+
 -- User Table
 CREATE TABLE Users (
     UserID SERIAL PRIMARY KEY,
@@ -7,6 +8,7 @@ CREATE TABLE Users (
     FirstName VARCHAR(50),
     LastName VARCHAR(50),
     DateOfBirth DATE,
+
     Gender VARCHAR(10) CHECK (Gender IN ('Male', 'Female', 'Other')),
     Height FLOAT,
     Weight FLOAT,
@@ -21,6 +23,7 @@ CREATE TABLE UserStats (
     TotalDistance FLOAT,
     TotalWorkouts INT,
     LastActiveDate TIMESTAMP,
+
     CONSTRAINT fk_user FOREIGN KEY (UserID) REFERENCES Users(UserID)
 );
 
@@ -34,6 +37,7 @@ CREATE TABLE WorkoutHistory (
     StartDateTime TIMESTAMP,
     EndDateTime TIMESTAMP,
     FOREIGN KEY (UserID) REFERENCES Users(UserID)
+
 );
 
 -- Nutrition Log Table
@@ -45,6 +49,7 @@ CREATE TABLE NutritionLog (
     CaloriesConsumed INT,
     LogDate DATE,
     FOREIGN KEY (UserID) REFERENCES Users(UserID)
+
 );
 
 -- Friends Table
@@ -52,8 +57,10 @@ CREATE TABLE Friends (
     FriendshipID INT PRIMARY KEY,
     UserID1 INT,
     UserID2 INT,
+
     FOREIGN KEY (UserID1) REFERENCES Users(UserID),
     FOREIGN KEY (UserID2) REFERENCES Users(UserID)
+
 );
 
 -- Messages Table
@@ -63,8 +70,10 @@ CREATE TABLE Messages (
     ReceiverUserID INT,
     MessageContent TEXT,
     Timestamp TIMESTAMP,
+
     FOREIGN KEY (SenderUserID) REFERENCES Users(UserID),
     FOREIGN KEY (ReceiverUserID) REFERENCES Users(UserID)
+
 );
 
 -- Achievements Table
@@ -74,6 +83,7 @@ CREATE TABLE Achievements (
     AchievementName VARCHAR(100),
     AchievementDescription TEXT,
     AchievementDate DATE,
+
     FOREIGN KEY (UserID) REFERENCES Users(UserID)
 );
 
