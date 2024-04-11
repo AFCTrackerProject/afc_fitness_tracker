@@ -1,39 +1,69 @@
 {% extends "_layout.html" %}
 
 {% block content %}
-    <div class="canvas-paper"></div>
-    <div class="canvas-paper">
+<div class="canvas-paper">
+    <div class="w-full py-24 px-6 text-center">
+        <h1 class="text-4xl font-bold text-gray-800 mb-4">Macro Tracker</h1>
+        <!-- Display Section for Targets and Daily Intake -->
+        <div class="bg-gray-100 shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <h2 class="text-xl font-bold mb-4">Today's Macro Goals & Intake</h2>
+            <p><strong>Protein:</strong> {{ user_macros.daily_intake.protein }} / {{ user_macros.targets.protein }} g</p>
+            <p><strong>Carbs:</strong> {{ user_macros.daily_intake.carbs }} / {{ user_macros.targets.carbs }} g</p>
+            <p><strong>Fats:</strong> {{ user_macros.daily_intake.fats }} / {{ user_macros.targets.fats }} g</p>
+        </div>
+        <p class="text-gray-600">Track your macronutrient intake and manage your nutrition with our Macro Tracker!</p>
+    </div>
 
-            <div class="w-full py-24 px-6 text-center">
-                <h1 class="text-4xl font-bold text-gray-800 mb-4">Macro Tracker</h1>
-                <p class="text-gray-600">Track your macronutrient intake and manage your nutrition with our Macro Tracker!</p>
+    <div class="flex justify-center items-center">
+        <div class="w-full max-w-2xl">
+            <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+                <h2 class="text-2xl font-bold mb-4">Set Your Macro Targets</h2>
+                <form method="POST" action="/macrotracker">
+                    <input type="hidden" name="set_targets" value="true">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="target_protein">Target Protein (g)</label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="target_protein" type="text" placeholder="Protein goal">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="target_carbs">Target Carbs (g)</label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="target_carbs" type="text" placeholder="Carbs goal">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="target_fats">Target Fats (g)</label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="target_fats" type="text" placeholder="Fats goal">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <button class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                            Set Targets
+                        </button>
+                    </div>
+                </form>
             </div>
 
-            <div class="flex justify-center items-center">
-                <div class="w-full max-w-lg">
-                    <!-- Macro Tracker Content Goes Here -->
-                    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-                        <!-- Macro Tracker Form or Features -->
-                        <h2 class="text-2xl font-bold mb-4">Track Your Macros</h2>
-                        <!-- Example Macro Tracking Form -->
-                        <form>
-                            <div class="mb-4">
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="protein">Protein (g)</label>
-                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="protein" type="text" placeholder="Enter protein intake">
-                            </div>
-                            <!-- Repeat for carbs, fats, etc. -->
-                            <div class="flex items-center justify-between">
-                                <button class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button">
-                                    Track Macros
-                                </button>
-                            </div>
-                        </form>
+            <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+                <h2 class="text-2xl font-bold mb-4">Log Your Daily Intake</h2>
+                <form method="POST" action="/macrotracker">
+                    <input type="hidden" name="log_intake" value="true">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="daily_protein">Protein (g) Today</label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="daily_protein" type="text" placeholder="Enter today's protein intake">
                     </div>
-                </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="daily_carbs">Carbs (g) Today</label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="daily_carbs" type="text" placeholder="Enter today's carbs intake">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="daily_fats">Fats (g) Today</label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="daily_fats" type="text" placeholder="Enter today's fats intake">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                            Log Intake
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-</body>
-</html>
-
+</div>
 {% endblock %}
