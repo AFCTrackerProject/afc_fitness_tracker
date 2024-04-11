@@ -76,3 +76,10 @@ CREATE TABLE Achievements (
     AchievementDate DATE,
     FOREIGN KEY (UserID) REFERENCES User(UserID)
 );
+
+CREATE TABLE UserLevel (
+    UserID INT PRIMARY KEY,
+    CurrentLevel INT,
+    ExperiencePoints INT,
+    FOREIGN KEY (UserID) REFERENCES User(UserID)
+);
