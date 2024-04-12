@@ -1,43 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session
 from dotenv import load_dotenv
 
 
 load_dotenv()
 
 app = Flask(__name__)
-
-# Placeholder for storing macro targets and daily intake
-user_macros = {
-    'targets': {'protein': 0, 'carbs': 0, 'fats': 0},
-    'daily_intake': {'protein': 0, 'carbs': 0, 'fats': 0}
-}
-
-
-secret_key = secrets.token_hex(16)
-
-# Configure SQLAlchemy
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg://postgres:Cam_Cope247@localhost:5432/afc_fitness'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = secret_key
-db = SQLAlchemy(app)
-bcrypt = Bcrypt(app)
-
-# Define User model
-class User(db.Model):
-    __tablename__ = 'UserTable'
-
-    id = db.Column(db.Integer, primary_key=True)
-    #username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    first_name = db.Column(db.String(50))
-    last_name = db.Column(db.String(50))
-    #date_of_birth = db.Column(db.Date)
-    #gender = db.Column(db.Enum('Male', 'Female', 'Other'))
-    height = db.Column(db.Float)
-    weight = db.Column(db.Float)
-    #join_date = db.Column(db.DateTime, default=datetime.utcnow)
-    # Add other fields as needed
 
 @app.get('/')
 def index():
