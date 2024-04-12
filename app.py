@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session
 from dotenv import load_dotenv
+
 
 load_dotenv()
 
