@@ -1,11 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_bcrypt import Bcrypt
-from datetime import datetime
-import secrets
-import re
+from dotenv import load_dotenv
 
+
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -14,7 +11,6 @@ user_macros = {
     'targets': {'protein': 0, 'carbs': 0, 'fats': 0},
     'daily_intake': {'protein': 0, 'carbs': 0, 'fats': 0}
 }
-
 
 
 secret_key = secrets.token_hex(16)
