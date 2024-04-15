@@ -1,11 +1,17 @@
-from flask import Flask, render_template, request, redirect, url_for, session
-from flask import Flask, render_template, request, redirect, url_for, session
+import os
+from flask import Flask, render_template, request, redirect, url_for, abort, flash
 from dotenv import load_dotenv
+from database import fitness_repo
+from flask_bcrypt import Bcrypt
 
 
 load_dotenv()
 
 app = Flask(__name__)
+
+app.secret_key = os.getenv('APP_SECRET_KEY')
+
+bcrypt = Bcrypt(app)
 
 @app.get('/')
 def index():
@@ -15,24 +21,10 @@ def index():
 def workouts():
     return render_template('workouts.html')
 
-@app.route('/macrotracker', methods=['GET', 'POST'])
+@app.route('/macrotracker')
 def macrotracker():
-    if request.method == 'POST':
-        if 'set_targets' in request.form:
-            # Logic for setting targets remains the same
-            user_macros['targets'] = {
-                'protein': int(request.form.get('target_protein', 0)),
-                'carbs': int(request.form.get('target_carbs', 0)),
-                'fats': int(request.form.get('target_fats', 0))
-            }
-        elif 'log_intake' in request.form:
-            # Adjusted logic for accumulating daily intake
-            user_macros['daily_intake']['protein'] += int(request.form.get('daily_protein', 0))
-            user_macros['daily_intake']['carbs'] += int(request.form.get('daily_carbs', 0))
-            user_macros['daily_intake']['fats'] += int(request.form.get('daily_fats', 0))
-        return redirect(url_for('macrotracker'))
-   
-    return render_template('macrotracker.html', user_macros=user_macros)
+    return render_template('macrotracker.html')
+    
 
 @app.get('/forum')
 def forum():
@@ -54,50 +46,52 @@ def userregistration():
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        first_name = request.form['first_name']
-        last_name = request.form['last_name']
-        email = request.form['email']
-        password = request.form['password']
-        # Validate form data
-        # Hash the password
+        # Retrieve form data from request
+        firstname = request.form.get('firstname')
+        lastname = request.form.get('lastname')
+        email = request.form.get('email')
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        # Check if username and password are not empty
+        if not username or not password:
+            return 'Username or password cannot be empty'
+
+        # Further processing (e.g., validate inputs, create user)
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        # Create user in the database or perform other actions
+        # Example:
+        fitness_repo.create_user(firstname, lastname, email, username, hashed_password)
 
-        #Check if email is valid
+        return 'User created successfully'
 
-        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-            return 'Invalid email address'
-       
-        # Check if email already exists
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user:
-            return 'Email already exists'
-       
-        # Create new user
-        new_user = User(first_name=first_name, last_name=last_name, email=email, password=hashed_password)
-        db.session.add(new_user)
-        db.session.commit()
-       
-        # Store user's id in session
-        if new_user.id:
-            session['user_id'] = new_user.id
-            return 'User registered successfully'
-    
+    # Render the signup form template for GET requests
     return render_template('signup.html')
+    
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-
     if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if not username or not password:    
+            abort(400, 'Both username and password are required!')
+        
+        user = fitness_repo.get_user_by_username(username)
+        print(user)
+        if not user:
+             abort(401, 'Invalid username or password.')        
 
-        email = request.form['email']
-        password = request.form['password']
-       
-        # Check if user exists
-        user = User.query.filter_by(email=email).first()
-        if user and bcrypt.check_password_hash(user.password, password):
-          # Store user's id in session
-            session['user_id'] = user.id
-            return 'Logged in successfully'
+        validated_password = bcrypt.check_password_hash(user["password"],password)
+        
+        if not validated_password:
+            flash('Username and password do not match!', 'error')
+            return render_template('login.html', show_popup=True)
+        
+        flash('Login successful!', 'success')
+        return redirect(url_for('index'))
 
     return render_template('login.html')
 
@@ -117,53 +111,6 @@ def bicep():
 def legs():
     return redirect('https://www.muscleandstrength.com/workouts/legs')
 
-'''
-   
-def add_exercise(self, exercise_name, duration, calories_burned):
-    """
-    Add a new exercise entry to the tracking system.
-
-    :param exercise_name: Name of the exercise.
-    :type exercise_name: str
-    :param duration: Duration of the exercise in minutes.
-    :type duration: int
-    :param calories_burned: Calories burned during the exercise.
-    :type calories_burned: float
-    """
-    pass
-   
-def remove_exercise(self, exercise_name):
-    """
-    Remove an exercise entry from the tracking system.
-
-    :param exercise_name: Name of the exercise to be removed.
-    :type exercise_name: str
-    """
-    pass
-   
-def view_exercises(self):
-    """
-    View all recorded exercises.
-    """
-    pass
-   
-def calculate_total_calories(self):
-    """
-    Calculate the total calories burned from all recorded exercises.
-
-    :return: Total calories burned.
-    :rtype: float
-    """
-    pass
-   
-def suggest_exercise(self):
-    """
-    Suggest an exercise based on user preferences or goals.
-    """
-    pass
-
-'''
-
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True) 
