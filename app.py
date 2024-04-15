@@ -21,9 +21,24 @@ def index():
 def workouts():
     return render_template('workouts.html')
 
-@app.route('/macrotracker')
+@app.route('/macrotracker', methods=['GET', 'POST'])
 def macrotracker():
-    return render_template('macrotracker.html')
+    if request.method == 'POST':
+        if 'set_targets' in request.form:
+            # Logic for setting targets remains the same
+            user_macros['targets'] = {
+                'protein': int(request.form.get('target_protein', 0)),
+                'carbs': int(request.form.get('target_carbs', 0)),
+                'fats': int(request.form.get('target_fats', 0))
+            }
+        elif 'log_intake' in request.form:
+            # Adjusted logic for accumulating daily intake
+            user_macros['daily_intake']['protein'] += int(request.form.get('daily_protein', 0))
+            user_macros['daily_intake']['carbs'] += int(request.form.get('daily_carbs', 0))
+            user_macros['daily_intake']['fats'] += int(request.form.get('daily_fats', 0))
+        return redirect(url_for('macrotracker'))
+
+    return render_template('macrotracker.html', user_macros=user_macros)
     
 
 @app.get('/forum')
