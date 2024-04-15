@@ -13,6 +13,19 @@ app.secret_key = os.getenv('APP_SECRET_KEY')
 
 bcrypt = Bcrypt(app)
 
+user_macros = {
+    'targets': {
+        'protein': 0,
+        'carbs': 0,
+        'fats': 0
+    },
+    'daily_intake': {
+        'protein': 0,
+        'carbs': 0,
+        'fats': 0
+    }
+}
+
 @app.get('/')
 def index():
     return render_template('index.html')
