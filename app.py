@@ -37,9 +37,13 @@ def index():
 
 @app.get('/workouts')
 def workouts():
+    return render_template('workouts.html')
+
+@app.get('/secret')
+def secret():
     if 'userid' not in session:
         return redirect('/')
-    return render_template('workouts.html')
+    return render_template('secret.html')
 
 @app.route('/macrotracker', methods=['GET', 'POST'])
 def macrotracker():
@@ -116,7 +120,7 @@ def login():
             abort(400, 'Both username and password are required!')
         
         user = fitness_repo.get_user_by_username(username)
-        print(user)
+        
         if not user:
              abort(401, 'Invalid username or password.')        
 
@@ -128,7 +132,7 @@ def login():
         
         flash('Login successful!', 'success')
         session['userid'] = user['userid']
-        return redirect(url_for('workouts'))
+        return redirect(url_for('secret'))
 
 
     return render_template('login.html')
@@ -136,7 +140,6 @@ def login():
 @app.post('/logout')
 def logout():
     session.pop('userid', None)
-    print('userid' in session)
     return redirect('/')
 
 @app.get('/profile')
