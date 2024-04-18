@@ -1,8 +1,10 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, abort, flash
+from flask import Flask, render_template, request, redirect, url_for, abort, flash, jsonify
 from dotenv import load_dotenv
 from database import fitness_repo
 from flask_bcrypt import Bcrypt
+import googlemaps
+import requests 
 
 
 load_dotenv()
@@ -10,6 +12,9 @@ load_dotenv()
 app = Flask(__name__)
 
 app.secret_key = os.getenv('APP_SECRET_KEY')
+
+api_key = 'AIzaSyAKDHnR80au2cURkbiCZyKg061A1cZt3MY'
+gmaps = googlemaps.Client(key='AIzaSyAKDHnR80au2cURkbiCZyKg061A1cZt3MY')
 
 bcrypt = Bcrypt(app)
 
@@ -138,6 +143,81 @@ def bicep():
 @app.route('/legs')
 def legs():
     return redirect('https://www.muscleandstrength.com/workouts/legs')
+
+@app.route('/finder.html')
+def finder():
+    return render_template('finder.html')
+
+@app.route('/find_places', methods=['POST'])
+def find_places():
+    try:
+        # Get ZIP code and place type from form data
+        zip_code = request.form['zip_code']
+        place_type = request.form['category']
+
+        # Log the received form data for debugging
+        print("Received form data - ZIP code:", zip_code)
+        print("Received form data - Place type:", place_type)
+
+        # Use Google Maps Geocoding API to convert ZIP code to coordinates
+        geocoding_api_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={zip_code}&key=AIzaSyAKDHnR80au2cURkbiCZyKg061A1cZt3MY"
+        geocoding_response = requests.get(geocoding_api_url)
+        geocoding_data = geocoding_response.json()
+
+        # Log the geocoding response for debugging
+        print("Geocoding response:", geocoding_data)
+
+        # Extract latitude and longitude from the geocoding response
+        if geocoding_data['status'] == 'OK':
+            location = geocoding_data['results'][0]['geometry']['location']
+            latitude = location['lat']
+            longitude = location['lng']
+
+            # Log the extracted coordinates for debugging
+            print("Extracted latitude:", latitude)
+            print("Extracted longitude:", longitude)
+
+            # Define the request body with the extracted coordinates
+            request_body = {
+                "includedTypes": [place_type],
+                "maxResultCount": 10,
+                "locationRestriction": {
+                    "circle": {
+                        "center": {
+                            "latitude": latitude,
+                            "longitude": longitude
+                        },
+                        "radius": 5000.0
+                    }
+                }
+            }
+
+            # Define headers
+            headers = {
+                "Content-Type": "application/json",
+                "X-Goog-Api-Key": "AIzaSyAKDHnR80au2cURkbiCZyKg061A1cZt3MY",
+                "X-Goog-FieldMask": "places.displayName,places.location"  # Specify the fields you want in the response
+            }
+
+            # Make POST request to Google Places API
+            response = requests.post("https://places.googleapis.com/v1/places:searchNearby", json=request_body, headers=headers)
+            response_data = response.json()
+
+            # Log the response from Google Places API for debugging
+            print("Google Places API response:", response_data)
+
+            # Extract places from the response
+            places = response_data.get('places', [])
+
+            # Return places as JSON response
+            return jsonify(places)
+        else:
+            return jsonify({'error': 'Failed to geocode ZIP code'}), 500
+
+    except Exception as e:
+        # Handle API error
+        return jsonify({'error': str(e)}), 500
+
 
 
 if __name__ == "__main__":
