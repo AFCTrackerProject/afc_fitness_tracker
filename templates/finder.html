@@ -1,0 +1,141 @@
+{% extends "_layout.html" %}
+
+{% block title %}
+FitnessFinder
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-8">
+    <h1 class="text-4xl font-bold text-gray-800 mb-4">FitnessFinder</h1>
+    <p class="text-lg text-gray-600 mb-4">Find nearby Gyms, Parks, and Healthy Restaurants on an interactive map!</p>
+    <div class="lg:flex">
+        <div class="lg:w-1/2">
+            <div class="w-full lg:w-3/4 mx-auto">
+                <button id="fitnessFinderButton" class="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600">Click Here to Search</button>
+                <!-- Modal for zip code and category selection -->
+                <div id="fitnessFinderModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+                    <div class="bg-white p-6 rounded-lg absolute left-0">
+                        <h2 class="text-2xl font-bold mb-4">FitnessFinder</h2>
+                        <form id="finderForm">
+                            <label for="zipCode" class="block mb-2">Enter your zip code:</label>
+                            <input type="text" id="zipCode" name="zip_code" required class="block w-full border border-gray-300 rounded-md px-4 py-2 mb-4 focus:outline-none focus:border-indigo-500 focus:ring focus:ring-indigo-200">
+                            <label for="category" class="block mb-2">Select category:</label>
+                            <select id="category" name="category" class="block w-full border border-gray-300 rounded-md px-4 py-2 mb-4 focus:outline-none focus:border-indigo-500 focus:ring focus:ring-indigo-200">
+                                <option value="gym">Gyms</option>
+                                <option value="park">Parks and Recreational Areas</option>
+                                <option value="restaurant">Healthy Food Options</option>
+                            </select>
+                            <button type="submit" class="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600">Find Places</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="map" class="lg:w-1/2 h-96"></div>
+    </div>
+    <p class="text-lg text-gray-600 mb-4">Click on search results in the "Places" table below to view locations on the map as pins.</p>
+    <div class="mt-8">
+        <h2 class="text-2xl font-bold mb-4">Places</h2>
+        <table class="table-auto">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2">Name</th>
+                    <th class="px-4 py-2">Location</th>
+                </tr>
+            </thead>
+            <tbody id="placesTable">
+                <!-- Place data will be dynamically inserted here -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Google Maps API script -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAKDHnR80au2cURkbiCZyKg061A1cZt3MY&libraries=places&callback=initMap" defer></script>
+
+<script>
+    var map;
+    var markers = []; // Initialize markers array
+
+    // Function to handle button click and show modal
+    document.getElementById('fitnessFinderButton').addEventListener('click', function() {
+        document.getElementById('fitnessFinderModal').classList.remove('hidden');
+    });
+
+    // Function to initialize Google Map
+    function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: {lat: 40.7128, lng: -74.0060}, // Default center (New York City)
+            zoom: 10 // Default zoom level
+        });
+
+        // Function to handle form submission
+        document.getElementById('finderForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent form submission
+            var formData = new FormData(this);
+            fetch('/find_places', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update map with places data
+                updateMap(data);
+                // Display places in the table
+                displayPlaces(data);
+                // Hide modal
+                document.getElementById('fitnessFinderModal').classList.add('hidden');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    }
+
+    // Function to update map with places data
+    function updateMap(data) {
+        // Remove existing markers
+        markers.forEach(marker => {
+            marker.setMap(null);
+        });
+
+        // Add markers for each place
+        data.forEach(place => {
+            var marker = new google.maps.Marker({
+                position: {lat: place.location.latitude, lng: place.location.longitude},
+                map: map,
+                title: place.displayName.text
+            });
+            markers.push(marker);
+
+            // Add click event listener to marker
+            marker.addListener('click', function() {
+                map.panTo(marker.getPosition()); // Pan to marker location
+            });
+        });
+    }
+
+    // Function to display places in the table
+    function displayPlaces(data) {
+        var placesTable = document.getElementById('placesTable');
+        placesTable.innerHTML = ''; // Clear existing table data
+
+        data.forEach(place => {
+            var row = document.createElement('tr');
+            var nameCell = document.createElement('td');
+            nameCell.textContent = place.displayName.text;
+            row.appendChild(nameCell);
+
+            var locationCell = document.createElement('td');
+            locationCell.textContent = place.location.latitude + ', ' + place.location.longitude;
+            row.appendChild(locationCell);
+
+            row.addEventListener('click', function() {
+                map.panTo({lat: place.location.latitude, lng: place.location.longitude}); // Pan to place location
+            });
+
+            placesTable.appendChild(row);
+        });
+    }
+</script>
+{% endblock %}
