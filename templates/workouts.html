@@ -20,6 +20,9 @@
                         <div class="border-b border-gray-200 pb-4 mb-4">
                             <div class="flex items-center">
                                 <img src="\static\images\{{ section|lower }}.png" class="w-16 h-16 object-cover mr-4">
+                                <form action="/logout" method ="post">
+                                    <button type="submit" class="btn btn-danger">Log out!</button>
+                                </form>
                                 <div>
                                     <h3 class="text-lg font-semibold mb-2">{{ section }}</h3>
                                     <p class="text-gray-600">List of {{ section }} Exercises</p>
