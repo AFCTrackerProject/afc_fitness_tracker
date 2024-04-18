@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, abort, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, abort, flash, jsonify, session
 from dotenv import load_dotenv
 from database import fitness_repo
 from flask_bcrypt import Bcrypt
@@ -37,6 +37,8 @@ def index():
 
 @app.get('/workouts')
 def workouts():
+    if 'userid' not in session:
+        return redirect('/')
     return render_template('workouts.html')
 
 @app.route('/macrotracker', methods=['GET', 'POST'])
@@ -97,6 +99,7 @@ def signup():
         fitness_repo.create_user(firstname, lastname, email, username, hashed_password)
 
         return 'User created successfully'
+    
 
     # Render the signup form template for GET requests
     return render_template('signup.html')
@@ -124,9 +127,17 @@ def login():
             return render_template('login.html', show_popup=True)
         
         flash('Login successful!', 'success')
-        return redirect(url_for('index'))
+        session['userid'] = user['userid']
+        return redirect(url_for('workouts'))
+
 
     return render_template('login.html')
+
+@app.post('/logout')
+def logout():
+    session.pop('userid', None)
+    print('userid' in session)
+    return redirect('/')
 
 @app.get('/profile')
 def profile():
