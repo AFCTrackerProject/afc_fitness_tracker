@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, abort, flash, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, abort, flash, get_flashed_messages, jsonify, session
 from dotenv import load_dotenv
 from database import fitness_repo
 from flask_bcrypt import Bcrypt
@@ -42,8 +42,10 @@ def workouts():
 @app.get('/secret')
 def secret():
     if 'userid' not in session:
-        return redirect('/')
-    return render_template('secret.html')
+        return redirect('/login')
+    userid = session.get('userid')
+    user = fitness_repo.get_user_by_id(userid)
+    return render_template('secret.html', user=user)
 
 @app.route('/macrotracker', methods=['GET', 'POST'])
 def macrotracker():
@@ -116,25 +118,30 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        if not username or not password:    
+        # Validate username and password
+        if not username or not password:
             abort(400, 'Both username and password are required!')
         
+        # Retrieve user from repository/database
         user = fitness_repo.get_user_by_username(username)
         
+        # Check if user exists
         if not user:
-             abort(401, 'Invalid username or password.')        
-
-        validated_password = bcrypt.check_password_hash(user["password"],password)
+            abort(401, 'Invalid username or password.')
         
-        if not validated_password:
+        # Verify password
+        if not bcrypt.check_password_hash(user['password'], password):
             flash('Username and password do not match!', 'error')
             return render_template('login.html', show_popup=True)
         
-        flash('Login successful!', 'success')
+        # Login successful, store user information in session
         session['userid'] = user['userid']
-        return redirect(url_for('secret'))
-
-
+        session['username'] = user['username']
+        
+        flash('Login successful!', 'success')
+        return redirect(url_for('secret'))  # Redirect to secret page after successful login
+    
+    # If GET request (i.e., accessing the login page)
     return render_template('login.html')
 
 @app.post('/logout')
@@ -236,6 +243,37 @@ def find_places():
     except Exception as e:
         # Handle API error
         return jsonify({'error': str(e)}), 500
+
+@app.route('/submit_question', methods=['POST'])
+def handle_question_submission():
+    # Check if userid is stored in the session
+    if 'userid' not in session or 'username' not in session:
+        return redirect('/')  # Redirect to home page or login page if user is not logged in
+
+    # Retrieve userid and username from session
+    userid = session['userid']
+    username = session['username']
+
+    # Retrieve form data (weight)
+    weight = request.form.get('weight')  # Assuming weight is submitted as a string
+
+    try:
+        weight_float = float(weight) # Convert weight to float (assuming it's a valid number)
+    except ValueError:
+        flash('Invalid weight value. Please enter a valid number.', 'error')
+        return redirect(url_for('secret'))
+
+
+    # Call the fitness_repo function to update the user's weight
+    success = fitness_repo.submit_question(username, weight_float)
+
+    if success:
+        flash('Weight updated successfully!', 'success')
+        
+    else:
+        flash('Failed to update weight. Please try again.', 'error')
+
+    return redirect(url_for('secret'))
 
 
 

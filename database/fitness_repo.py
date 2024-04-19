@@ -55,4 +55,36 @@ def get_user_by_username(username: str) -> dict[str, Any]:
             return user
 
 
+def submit_question(username: str, weight: float) -> bool:
+    pool = get_pool()
+    try:
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                # Use parameterized query with float value
+                cur.execute("""
+                    UPDATE users
+                    SET weight = %s
+                    WHERE username = %s
+                """, (weight, username))
+                conn.commit()  # Commit the UPDATE operation
 
+                # Check if any rows were affected (i.e., if user with specified username exists)
+                return cur.rowcount > 0
+    except Exception as e:
+        print(f"Error updating weight for user '{username}': {e}")
+        return False
+
+def get_user_by_id(userid: int) -> dict[str, Any] | None:
+        pool = get_pool()
+        with pool.connection() as conn:
+            with conn.cursor(row_factory=dict_row) as cur:
+                cur.execute("""
+                            SELECT
+                                userid,
+                                username
+                            FROM
+                                users
+                            WHERE userid = %s
+                            """,[userid])
+                user = cur.fetchone()
+                return user
