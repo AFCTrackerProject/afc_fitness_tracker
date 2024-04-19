@@ -246,34 +246,47 @@ def find_places():
 
 @app.route('/submit_question', methods=['POST'])
 def handle_question_submission():
-    # Check if userid is stored in the session
-    if 'userid' not in session or 'username' not in session:
-        return redirect('/')  # Redirect to home page or login page if user is not logged in
+    # Check if the form is submitted via POST method
+    if request.method == 'POST':
+        # Check if userid and username are stored in the session
+        if 'userid' not in session or 'username' not in session:
+            return redirect('/')  # Redirect to home page or login page if user is not logged in
 
-    # Retrieve userid and username from session
-    userid = session['userid']
-    username = session['username']
+        # Retrieve userid and username from session
+        userid = session['userid']
+        username = session['username']
 
-    # Retrieve form data (weight)
-    weight = request.form.get('weight')  # Assuming weight is submitted as a string
+        # Retrieve form data (weight, height, gender, dateofbirth)
+        weight = request.form.get('weight')
+        height = request.form.get('height')
+        gender = request.form.get('gender')
+        dateofbirth = request.form.get('dateofbirth')
 
-    try:
-        weight_float = float(weight) # Convert weight to float (assuming it's a valid number)
-    except ValueError:
-        flash('Invalid weight value. Please enter a valid number.', 'error')
-        return redirect(url_for('secret'))
+        # Validate and convert weight to float
+        try:
+            weight_float = float(weight)
+        except ValueError:
+            flash('Invalid weight value. Please enter a valid number.', 'error')
+            return redirect(url_for('secret'))
 
+        # Validate and convert height to float
+        try:
+            height_float = float(height)
+        except ValueError:
+            flash('Invalid height value. Please enter a valid number.', 'error')
+            return redirect(url_for('secret'))
 
-    # Call the fitness_repo function to update the user's weight
-    success = fitness_repo.submit_question(username, weight_float)
+        # Call the fitness_repo function to update the user's data
+        success = fitness_repo.submit_question(username, weight_float, height_float, gender, dateofbirth)
 
-    if success:
-        flash('Weight updated successfully!', 'success')
-        
-    else:
-        flash('Failed to update weight. Please try again.', 'error')
+        if success:
+            flash('Weight, height, gender, and DOB updated successfully!', 'success')
+        else:
+            flash('Failed to update weight, height, gender, or DOB. Please try again.', 'error')
 
-    return redirect(url_for('secret'))
+    # Redirect to the index page regardless of form submission success or failure
+    return redirect(url_for('index'))
+
 
 
 

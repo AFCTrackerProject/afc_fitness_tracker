@@ -55,7 +55,7 @@ def get_user_by_username(username: str) -> dict[str, Any]:
             return user
 
 
-def submit_question(username: str, weight: float) -> bool:
+def submit_question(username: str, weight: float, height: float, gender: str, dateofbirth: str) -> bool:
     pool = get_pool()
     try:
         with pool.connection() as conn:
@@ -63,10 +63,10 @@ def submit_question(username: str, weight: float) -> bool:
                 # Use parameterized query with float value
                 cur.execute("""
                     UPDATE users
-                    SET weight = %s
+                    SET weight = %s, height = %s, gender=%s, dateofbirth=%s
                     WHERE username = %s
-                """, (weight, username))
-                conn.commit()  # Commit the UPDATE operation
+                """, (weight, height, gender, dateofbirth, username))
+                conn.commit()  # Commit th  e UPDATE operation
 
                 # Check if any rows were affected (i.e., if user with specified username exists)
                 return cur.rowcount > 0
@@ -75,8 +75,8 @@ def submit_question(username: str, weight: float) -> bool:
         return False
 
 def get_user_by_id(userid: int) -> dict[str, Any] | None:
-        pool = get_pool()
-        with pool.connection() as conn:
+    pool = get_pool()
+    with pool.connection() as conn:
             with conn.cursor(row_factory=dict_row) as cur:
                 cur.execute("""
                             SELECT
