@@ -1,46 +1,42 @@
 {% extends "_layout.html" %}
 
 {% block content %}
-<div class="canvas-paper"></div>
-<div class="canvas-paper">
-
-<div class="flex justify-center items-center">
+<div class="flex justify-center items-center h-screen"> <!-- Use flexbox to center content vertically and horizontally -->
   <div class="w-full max-w-lg">
 
     <div class="mb-12"></div> <!-- Spacer -->
 
-      <label class="block text-gray-700 text-sm font-bold mb-2"></label>
-      <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-          <h2 class="text-4xl font-bold mb-4">Log in</h2>
-          {% if show_success_popup %}
-          <script>
-            alert("Login successful!");
-          </script>
-          {% endif %}
-          {% if show_popup %}
-          <script>
-            alert("Username and password do not match! Please try again.");
-          </script>
-          {% endif %}
-          <!-- New Member? Signup Redirect -->
-          <div class="self-stretch mt-4 leading-7 text-amber-500">
-            New to our website?
-            <span class="font-bold text-amber-500">
-              <a href="/signup" class="text-amber-500 hover:text-amber-700">
-                Sign up here!
-              </a>
-            </span>
-          </div>
-          
-          <!-- Login Form -->
-          <form action="{{ url_for('login') }}" method="POST">
-            <input type="text" name="username" placeholder="Username" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <button type="submit" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-              Log In
-            </button>
-          </form>
+    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+      <h2 class="text-4xl font-bold mb-4">Log in</h2>
+      {% if show_success_popup %}
+        <script>
+          alert("Login successful!");
+        </script>
+      {% endif %}
+      {% if show_popup %}
+        <script>
+          alert("Username and password do not match! Please try again.");
+        </script>
+      {% endif %}
+      <!-- New Member? Signup Redirect -->
+      <div class="self-stretch mt-4 leading-7 text-amber-500">
+        New to our website?
+        <span class="font-bold text-amber-500">
+          <a href="/signup" class="text-amber-500 hover:text-amber-700">
+            Sign up here!
+          </a>
+        </span>
       </div>
+          
+      <!-- Login Form -->
+      <form action="{{ url_for('login') }}" method="POST" class="mt-4"> <!-- Add margin top for spacing -->
+        <input type="text" name="username" placeholder="Username" required class="w-full bg-gray-200 rounded py-2 px-4 mb-2">
+        <input type="password" name="password" placeholder="Password" required class="w-full bg-gray-200 rounded py-2 px-4 mb-4">
+        <button type="submit" class="w-full bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+          Log In
+        </button>
+      </form>
+    </div>
   </div>
 </div>
 
