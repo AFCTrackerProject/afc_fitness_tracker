@@ -1,6 +1,7 @@
 from database.db import get_pool
 from typing import Any
 from psycopg.rows import dict_row
+from flask import flash
 
 
 def does_username_exist(username: str) -> bool:
@@ -50,8 +51,7 @@ def get_user_by_username(username: str) -> dict[str, Any]:
                         """, [username])
             user = cur.fetchone()
             if user is None:
-                print(f"Username '{username}' not found in the database.")
-                raise Exception('User not found!')
+                return None  
             return user
 
 
@@ -80,8 +80,15 @@ def get_user_by_id(userid: int) -> dict[str, Any] | None:
             with conn.cursor(row_factory=dict_row) as cur:
                 cur.execute("""
                             SELECT
+                                firstname,
+                                lastname,
                                 userid,
-                                username
+                                username,
+                                email,
+                                dateofbirth,
+                                gender,
+                                height,
+                                weight
                             FROM
                                 users
                             WHERE userid = %s
