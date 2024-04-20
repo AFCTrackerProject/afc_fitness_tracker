@@ -19,6 +19,17 @@
         </span>
       </div>
       <br>
+
+      <!-- Flash message -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+          {% for category, message in messages %}
+              <div class="alert alert-{{ category }} mt-4">
+                  {{ message }}
+              </div>
+          {% endfor %}
+      {% endif %}
+  {% endwith %} 
       
       <!-- Signup Form -->
       <form action="{{ url_for('signup') }}" method="post" class="mt-4"> <!-- Add margin top for spacing -->
@@ -37,6 +48,9 @@
         </div>
         <div class="mb-4">
           <input type="password" name="password" placeholder="Password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+        <div class="mb-4">
+          <input type="password" name="confirmpassword" placeholder="Confirm Password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
         </div>
         
         <!-- Submit Button -->
