@@ -49,6 +49,9 @@ def secret():
 
 @app.route('/macrotracker', methods=['GET', 'POST'])
 def macrotracker():
+    if 'userid' not in session:
+        flash('You need to log in to use the macrotracker.','error')
+        return redirect('/login')
     if request.method == 'POST':
         if 'set_targets' in request.form:
             # Logic for setting targets remains the same
@@ -69,6 +72,9 @@ def macrotracker():
 
 @app.get('/forum')
 def forum():
+    if 'userid' not in session:
+        flash('You need to log in to use the forum feature.','error')
+        return redirect('/login')
     return render_template('forum.html')
 
 @app.get('/contact')
@@ -126,9 +132,10 @@ def login():
         user = fitness_repo.get_user_by_username(username)
         
         # Check if user exists
-        if not user:
-            abort(401, 'Invalid username or password.')
-        
+        if user is None:
+            flash('Username does not exist! Create an account!', 'error')
+            return render_template('login.html', show_popup=True)
+    
         # Verify password
         if not bcrypt.check_password_hash(user['password'], password):
             flash('Username and password do not match!', 'error')
@@ -141,6 +148,7 @@ def login():
         flash('Login successful!', 'success')
         return redirect(url_for('secret'))  # Redirect to secret page after successful login
     
+    
     # If GET request (i.e., accessing the login page)
     return render_template('login.html')
 
@@ -148,11 +156,16 @@ def login():
 def logout():
     session.pop('userid', None)
     return redirect('/')
+    flash('You have been logged out.','info')
 
 @app.get('/profile')
 def profile():
-    # Simply render the profile.html template
-    return render_template('profile.html')
+    if 'userid' not in session:
+        flash('You need to log in to see your profile.','error')
+        return redirect('/login')
+    userid = session.get('userid')
+    user = fitness_repo.get_user_by_id(userid)
+    return render_template('profile.html', user=user)
 
 @app.route('/chest')
 def chest():
@@ -172,6 +185,9 @@ def legs():
 
 @app.route('/finder.html')
 def finder():
+    if 'userid' not in session:
+        flash('You need to log in to use the Finder feature.','error')
+        return redirect('/login')
     return render_template('finder.html')
 
 @app.route('/find_places', methods=['POST'])
@@ -246,48 +262,50 @@ def find_places():
 
 @app.route('/submit_question', methods=['POST'])
 def handle_question_submission():
-    # Check if the form is submitted via POST method
-    if request.method == 'POST':
-        # Check if userid and username are stored in the session
-        if 'userid' not in session or 'username' not in session:
-            return redirect('/')  # Redirect to home page or login page if user is not logged in
+    # Check if userid and username are stored in the session
+    if 'userid' not in session or 'username' not in session:
+        return redirect('/')  # Redirect to home page or login page if user is not logged in
 
-        # Retrieve userid and username from session
-        userid = session['userid']
-        username = session['username']
+    # Retrieve userid and username from session
+    userid = session['userid']
+    username = session['username']
 
-        # Retrieve form data (weight, height, gender, dateofbirth)
-        weight = request.form.get('weight')
-        height = request.form.get('height')
-        gender = request.form.get('gender')
-        dateofbirth = request.form.get('dateofbirth')
+    # Retrieve form data (weight, height, gender)
+    weight = request.form.get('weight')
+    height = request.form.get('height')
+    gender = request.form.get('gender')
+    dateofbirth = request.form.get('dateofbirth')
 
-        # Validate and convert weight to float
-        try:
-            weight_float = float(weight)
-        except ValueError:
-            flash('Invalid weight value. Please enter a valid number.', 'error')
-            return redirect(url_for('secret'))
+    # Validate and convert weight to float
+    try:
+        weight_float = float(weight)
+    except ValueError:
+        flash('Invalid weight value. Please enter a valid number.', 'error')
+        return redirect(url_for('secret'))
 
-        # Validate and convert height to float
-        try:
-            height_float = float(height)
-        except ValueError:
-            flash('Invalid height value. Please enter a valid number.', 'error')
-            return redirect(url_for('secret'))
+    # Validate and convert height to float
+    try:
+        height_float = float(height)
+    except ValueError:
+        flash('Invalid height value. Please enter a valid number.', 'error')
+        return redirect(url_for('secret'))
 
-        # Call the fitness_repo function to update the user's data
-        success = fitness_repo.submit_question(username, weight_float, height_float, gender, dateofbirth)
+    # Call the fitness_repo function to update the user's weight, height, and gender
+    success = fitness_repo.submit_question(username, weight_float, height_float, gender, dateofbirth)
 
-        if success:
-            flash('Weight, height, gender, and DOB updated successfully!', 'success')
-        else:
-            flash('Failed to update weight, height, gender, or DOB. Please try again.', 'error')
+    if success:
+        flash('Welcome to your new profile! Click the icon at the top right at any time while logged in to view it! You can always update your profile at the bottom. ', 'success')
+    else:
+        flash('Failed to update one of the following: weight, height, gender, DOB. Please try again.', 'error')
 
-    # Redirect to the index page regardless of form submission success or failure
-    return redirect(url_for('index'))
+    return redirect(url_for('profile'))
 
 
+@app.context_processor
+def inject_logged_in():
+    # Check if user is logged in
+    logged_in = 'userid' in session
+    return dict(logged_in=logged_in)
 
 
 if __name__ == "__main__":
