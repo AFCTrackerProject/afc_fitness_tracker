@@ -85,33 +85,35 @@ def contact():
 def about():
     return render_template('about.html')
 
-@app.post('/user-registration')
-def userregistration():
-    
-    return render_template('user-registration.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    if request.method == 'POST':
-        # Retrieve form data from request
+    if request.method == 'POST': 
+        # Retrieve form data from what the user just submitted
         firstname = request.form.get('firstname')
         lastname = request.form.get('lastname')
         email = request.form.get('email')
         username = request.form.get('username')
         password = request.form.get('password')
+        confirmpassword = request.form.get('confirmpassword')
 
-        # Check if username and password are not empty
+        # Check that username and password are not empty
         if not username or not password:
-            return 'Username or password cannot be empty'
+            flash('Username/password cannot be empty', 'error')
+            return render_template('signup.html', show_popup=True)
+        
+        # Check that the passwords on the form match
+        if password != confirmpassword:
+            flash('Passwords do not match', 'error')
+            return render_template('signup.html', show_popup=True)
 
-        # Further processing (e.g., validate inputs, create user)
+        # Encrypts password and stores it as a hashed password
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        # Create user in the database or perform other actions
-        # Example:
-        fitness_repo.create_user(firstname, lastname, email, username, hashed_password)
 
-        return 'User created successfully'
-    
+        # Executes the SQL code and flashes a message to indicate it was successful
+        if fitness_repo.create_user(firstname, lastname, email, username, hashed_password):
+            flash('User account successfully created!', 'info')
+            return render_template('signup.html', show_popup=True)
 
     # Render the signup form template for GET requests
     return render_template('signup.html')
@@ -120,6 +122,7 @@ def signup():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # Retrieve form data from what the user just submitted
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
