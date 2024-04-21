@@ -95,3 +95,16 @@ def get_user_by_id(userid: int) -> dict[str, Any] | None:
                             """,[userid])
                 user = cur.fetchone()
                 return user
+
+def update_user_profile(userid: int, email: str, dateofbirth: str, gender: str, height: int, weight: int) -> bool:
+    pool = get_pool()
+    with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE users
+                    SET email = %s, dateofbirth = %s, gender = %s, height = %s, weight = %s
+                    WHERE userid = %s
+                """, (email, dateofbirth, gender, height, weight, userid))
+                conn.commit()   
+
+                return cur.rowcount > 0  # Check if the update was successful
