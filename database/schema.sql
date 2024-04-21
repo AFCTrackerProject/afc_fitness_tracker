@@ -76,3 +76,4 @@ CREATE TABLE Achievements (
     AchievementDate DATE,
     FOREIGN KEY (UserID) REFERENCES Users(UserID)
 );
+
