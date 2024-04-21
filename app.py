@@ -303,6 +303,32 @@ def handle_question_submission():
 
     return redirect(url_for('profile'))
 
+@app.route('/updateprofile', methods=['POST','GET'])
+def updateprofile():
+    if 'userid' not in session:
+            flash('You need to log in to update your profile.','error')
+            return redirect('/login')
+    
+    if request.method == 'POST':
+        # Retrieve form data
+        email = request.form.get('email')
+        dateofbirth = request.form.get('dateofbirth')
+        gender = request.form.get('gender')
+        height = request.form.get('height')
+        weight = request.form.get('weight')
+
+        # Update
+        success = fitness_repo.update_user_profile(userid=session['userid'], email=email, dateofbirth=dateofbirth, gender=gender, height=height, weight=weight)
+
+        if success:
+            flash('Profile updated successfully!', 'success')
+        else:
+            flash('Failed to update profile. Please try again.', 'error')
+    
+    # If it's a GET request (initial load or refresh), render the updateprofile.html template
+    user = fitness_repo.get_user_by_id(session['userid'])
+    return render_template('updateprofile.html', user=user)
+
 
 @app.context_processor
 def inject_logged_in():
