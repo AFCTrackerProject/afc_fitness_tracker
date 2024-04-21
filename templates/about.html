@@ -1,38 +1,48 @@
 {% extends "_layout.html" %}
 
 {% block content %}
-<div class="canvas-paper">
-  <div class="w-full py-24 px-6 text-center">
-    <p class="text-4xl font-bold text-gray-800 mb-4">About Us</p>
-    <p class="text-gray-600">
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold text-center text-gray-800 mb-4">About Us</h1>
+    <p class="text-lg text-gray-600 text-center mb-8">
       At FitFusion, we're passionate about helping you achieve your health and fitness goals, no matter your level of experience or fitness background. Whether you're just starting your fitness journey or you're a seasoned athlete, we're here to support and inspire you every step of the way.
     </p>
 
-    <h2 class="mt-8"><strong>Our Mission</strong></h2>
-    <p>
-      Our mission at FitFusion is simple: to empower individuals to lead healthier, happier lives through fitness, nutrition, and community. We believe that everyone deserves access to the resources and support they need to reach their full potential, both physically and mentally.
-    </p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="border p-4 rounded-lg">
+            <h2 class="text-2xl font-semibold text-left"><strong>Our Mission</strong></h2>
+            <p class="text-left mt-2">
+                Our mission at FitFusion is simple: to empower individuals to lead healthier, happier lives through fitness, nutrition, and community. We believe that everyone deserves access to the resources and support they need to reach their full potential, both physically and mentally.
+            </p>
+        </div>
 
-    <h2 class="mt-8"><strong>What We Offer</strong></h2>
-    <ul class="list-disc list-inside mt-4">
-      <li><strong>Personalized Workouts:</strong> With our vast library of workout routines, you can find the perfect workout to fit your goals, preferences, and schedule. From high-intensity interval training (HIIT) to yoga and everything in between, we've got you covered.</li>
-      <li><strong>Nutrition Guidance:</strong> Fuel your body for success with expert nutrition advice and meal plans tailored to your dietary needs and fitness goals. Whether you're looking to lose weight, build muscle, or improve your overall health, we'll help you make smart choices in the kitchen.</li>
-      <li><strong>Community Support:</strong> Join our thriving community of fitness enthusiasts who share your passion for living a healthy lifestyle. Connect with like-minded individuals, participate in challenges and events, and celebrate your victories together.</li>
-      <li><strong>Expert Guidance:</strong> Get access to tips, tricks, and insights from certified fitness trainers, nutritionists, and wellness experts who are dedicated to helping you succeed. Whether you need advice on proper form, motivation to push through a tough workout, or strategies for staying on track, we're here to help.</li>
-      <li><strong>Innovative Technology:</strong> Our cutting-edge app makes it easy to track your progress, set goals, and stay accountable. With features like workout reminders, progress tracking, and personalized recommendations, you'll have everything you need to stay motivated and on track.</li>
-    </ul>
-
-    <h2 class="mt-8"><strong>Our Team</strong></h2>
-    <p>Behind FitFusion is a team of passionate individuals who are committed to making a positive impact on the lives of our users. From software engineers and designers to fitness trainers and nutritionists, each member of our team brings a unique set of skills and expertise to the table, united by a shared vision of helping others live their best lives.</p>
-    <div class="mt-4">
-      <p>Andrew Schmal</p>
-      <p>Tommy Nguyen</p>
-      <p>Cameron Copenhaver</p>
-      <p>Shubi Gaur</p>
+        <div class="border p-4 rounded-lg">
+            <h2 class="text-2xl font-semibold text-left"><strong>What We Offer</strong></h2>
+            <ul class="list-disc pl-5 text-left mt-2">
+                <li><strong>Personalized Workouts:</strong> Customizable routines to fit your goals and schedule.</li>
+                <li><strong>Nutrition Guidance:</strong> Expert advice and tailored meal plans.</li>
+                <li><strong>Community Support:</strong> Connect with fellow fitness enthusiasts.</li>
+                <li><strong>Expert Guidance:</strong> Access tips from certified professionals.</li>
+                <li><strong>Innovative Technology:</strong> Features like workout reminders and progress tracking.</li>
+            </ul>
+        </div>
     </div>
 
-    <h2 class="mt-8"><strong>Join Us Today!</strong></h2>
-    <p>Ready to take the first step towards a healthier, happier you? Join the FitFusion community today and start your journey towards a fitter, stronger, and more vibrant you. Together, we'll achieve greatness!</p>
-  </div>
+    <div class="border p-4 rounded-lg mt-8">
+        <h2 class="text-2xl font-semibold text-left"><strong>Our Team</strong></h2>
+        <p class="text-left mt-2">
+            Behind FitFusion is a team of passionate individuals committed to your health and fitness success. Our team includes software engineers, designers, fitness trainers, and nutritionists.
+        </p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+            <div><p class="text-center">Andrew Schmal</p></div>
+            <div><p class="text-center">Tommy Nguyen</p></div>
+            <div><p class="text-center">Cameron Copenhaver</p></div>
+            <div><p class="text-center">Shubi Gaur</p></div>
+        </div>
+    </div>
+
+    <h2 class="text-2xl font-semibold text-left mt-8"><strong>Join Us Today!</strong></h2>
+    <p class="text-left mt-2">
+        Ready to take the first step towards a healthier, happier you? Join the FitFusion community today and start your journey towards a fitter, stronger, and more vibrant you. Together, we'll achieve greatness!
+    </p>
 </div>
 {% endblock %}
