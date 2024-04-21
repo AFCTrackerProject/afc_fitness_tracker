@@ -1,0 +1,75 @@
+{% extends "_layout.html" %}
+
+{% block content %}
+<style>
+    .big-heading {
+        font-size: 36px;
+        font-weight: bold;
+    }
+    .form-input {
+        height: 40px;
+        width: 100%; /* Set input width to 100% for responsiveness */
+        padding: 8px; /* Add padding to input for better appearance */
+        margin-bottom: 12px; /* Add vertical spacing between input fields */
+        box-sizing: border-box; /* Ensure padding is included in width */
+    }
+    .form-select {
+        height: 40px;
+        width: 100%; /* Set select width to 100% for responsiveness */
+        padding: 8px;
+        margin-bottom: 12px;
+        box-sizing: border-box;
+    }
+</style>
+<div class="container mx-auto mt-10">
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} mt-4">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <h2 class="big-heading">Update your profile below:</h2>
+
+    <!-- Edit Profile Form -->
+    <form method="post" action="{{ url_for('updateprofile') }}" class="bg-white p-4 rounded-lg shadow-md">
+        <div class="mb-4">
+            <label for="email" class="block text-sm font-medium text-gray-700">Email:</label>
+            <input type="email" id="email" name="email" value="{{ user.email }}" required class="form-input">
+        </div>
+
+        <div class="mb-4">
+            <label for="dateofbirth" class="block text-sm font-medium text-gray-700">Date of Birth:</label>
+            <input type="date" id="dateofbirth" name="dateofbirth" value="{{ user.dateofbirth }}" required class="form-input">
+        </div>
+
+        <div class="mb-4">
+            <label for="gender" class="block text-sm font-medium text-gray-700">Gender:</label>
+            <select id="gender" name="gender" required class="form-select">
+                <option value="Male" {% if user.gender == 'Male' %} selected {% endif %}>Male</option>
+                <option value="Female" {% if user.gender == 'Female' %} selected {% endif %}>Female</option>
+                <option value="Other" {% if user.gender == 'Other' %} selected {% endif %}>Other</option>
+            </select>
+        </div>
+
+        <div class="mb-4">
+            <label for="height" class="block text-sm font-medium text-gray-700">Height (in):</label>
+            <input type="number" id="height" name="height" value="{{ user.height }}" required class="form-input">
+        </div>
+
+        <div class="mb-4">
+            <label for="weight" class="block text-sm font-medium text-gray-700">Weight (lbs):</label>
+            <input type="number" id="weight" name="weight" value="{{ user.weight }}" required class="form-input">
+        </div>
+
+        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Update Profile</button>
+        <a href="{{ url_for('profile') }}" class="button mt-4">Go Back</a>
+
+    </form>
+
+</div>
+
+{% endblock %}
