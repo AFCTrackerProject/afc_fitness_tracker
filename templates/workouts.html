@@ -84,7 +84,7 @@
                     // Assuming each exercise object has a property named 'imageUrl'
                     const exerciseHtml = `
                         <div class="exercise-container">
-                            <img src="${exercise.imageUrl}" alt="${exercise.name}">
+                            <img src="${exercise.gifUrl}" alt="${exercise.name}">
                             <h3>${exercise.name}</h3>
                             <p>${exercise.instructions || 'No instructions provided.'}</p>
                         </div>
@@ -107,5 +107,21 @@
             });
     }
 </script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const btn = document.querySelector(".mobile-menu-button");
+        const menu = document.querySelector(".mobile-menu");
+
+        if (btn && menu) {
+            btn.addEventListener("click", () => {
+                menu.classList.toggle("hidden");
+            });
+        } else {
+            console.error("Menu button or mobile menu not found.");
+        }
+    });
+</script>
+
 
 {% endblock %}
