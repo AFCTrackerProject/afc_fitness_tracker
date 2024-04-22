@@ -12,10 +12,11 @@
 
 <div class="flex justify-center items-center">
     <div class="w-full max-w-7xl">
-        <div class="bg-white shadow-xl rounded px-8 pt-6 pb-8 mb-4" style="border-top: 2px solid rgba(0, 0, 0, 0.05); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);">
+        <div class="bg-white shadow-xl rounded px-8 pt-6 pb-8 mb-4"
+            style="border-top: 2px solid rgba(0, 0, 0, 0.05); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);">
             <div class="flex">
-                {% for section in ['Chest', 'Back', 'Bicep', 'Legs'] %}
-                <a href="{{ section|lower }}" class="w-full max-w-80 mr-4">
+                {% for section in ['Chest', 'Back', 'Arms', 'Legs'] %}
+                <a onclick="loadExercises('{{ section|lower }}')" class="cursor-pointer w-full max-w-80 mr-4">
                     <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
                         <div class="border-b border-gray-200 pb-4 mb-4">
                             <div class="flex items-center">
@@ -30,8 +31,81 @@
                 </a>
                 {% endfor %}
             </div>
+            <!-- Container to display the fetched exercise data -->
+            <div class="exercise-display mt-4">
+                <!-- Dynamic content will be loaded here -->
+            </div>
         </div>
     </div>
 </div>
+
+<style>
+    .exercise-container {
+        margin-bottom: 20px;
+        border: 1px solid #ccc;
+        padding: 15px;
+    }
+
+    .exercise-container img {
+        max-width: 100%;
+        height: auto;
+        margin-bottom: 10px;
+    }
+
+    .exercise-container h3 {
+        margin-bottom: 5px;
+    }
+
+    .exercise-video {
+        width: 100%;
+        height: 315px;
+        margin-top: 10px;
+    }
+</style>
+
+<script>
+    function loadExercises(muscle) {
+        fetch('/exercises/' + muscle)
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('Network response was not ok.');
+                }
+            })
+            .then(data => {
+                console.log("Processing data for:", muscle);  // Log data processing
+                console.log("Data received:", data);
+
+                const exercisesContainer = document.querySelector('.exercise-display');
+                exercisesContainer.innerHTML = `<h2>${muscle.charAt(0).toUpperCase() + muscle.slice(1)} Exercises</h2>`;
+
+                data.exercises.forEach(exercise => {
+                    // Assuming each exercise object has a property named 'imageUrl'
+                    const exerciseHtml = `
+                        <div class="exercise-container">
+                            <img src="${exercise.imageUrl}" alt="${exercise.name}">
+                            <h3>${exercise.name}</h3>
+                            <p>${exercise.instructions || 'No instructions provided.'}</p>
+                        </div>
+                    `;
+                    exercisesContainer.innerHTML += exerciseHtml;
+                });
+
+                // Assuming the data.videos.results is an array of video objects with a property named 'id'
+                data.videos.results.forEach(video => {
+                    const videoHtml = `
+                        <iframe class="exercise-video" src="https://www.youtube.com/embed/${video.id}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    `;
+                    exercisesContainer.innerHTML += videoHtml;
+                });
+
+            })
+            .catch(error => {
+                console.error('Error loading exercises:', error);
+                alert('Failed to load exercises. Please check the console for more details.');
+            });
+    }
+</script>
 
 {% endblock %}
