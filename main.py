@@ -21,6 +21,9 @@ class Comment(db.Model):
     text = db.Column(db.String, unique=True, nullable=False)
     topicId = db.Column(db.String)
 
+with app.app_context():
+    db.create_all()
+
 # homepage
 @app.route("/", methods=["GET", "POST"])
 def home():
@@ -30,9 +33,13 @@ def home():
             title=request.form["title"],
             description=request.form["description"],
         )
-        db.session.add(user)
+        db.session.add(topic)
         db.session.commit()
-    return render_template("bootstrapindex.html")
+
+    topics = db.session.execute(db.select(Topic)).scalars()
+    # for topic in topics:
+    #     print(topic.title, topic.description, topic.id)
+    return render_template("bootstrapindex.html", topics=topics)
 
 # Page will display a given topic
 @app.route("/topic/<int:id>", methods=["GET", "POST"])
@@ -45,6 +52,8 @@ def topic(id):
         )
         db.session.add(comment)
         db.session.commit()
+    
+    
     # Pull the topic and its comments
     return render_template("user/detail.html")
 
