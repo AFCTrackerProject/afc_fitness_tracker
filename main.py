@@ -47,15 +47,20 @@ def topic(id):
     if request.method == "POST":
         # Add a new comment to the topic
         comment = Comment(
-            text=request.form["text"],
-            topicId=request.form["topicID"],
+            text=request.form["comment"],
+            topicId=id
         )
         db.session.add(comment)
         db.session.commit()
     
     
     # Pull the topic and its comments
-    return render_template("user/detail.html")
+    topic = db.get_or_404(Topic, id)
+    comments = Comment.query.filter_by(topicId=id).all()
+    # print(comments)
+    # for comment in comments:
+    #     print(comments)
+    return render_template("forumpost.html", topic=topic, comments=comments )
 
 
 
