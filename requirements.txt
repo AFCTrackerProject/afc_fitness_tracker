@@ -6,6 +6,7 @@ click==8.1.7
 colorama==0.4.6
 Flask==3.0.3
 Flask-Bcrypt==1.0.1
+Flask-SQLAlchemy==3.1.1
 googlemaps==4.10.0
 idna==3.7
 itsdangerous==2.1.2
@@ -16,6 +17,7 @@ psycopg-binary==3.1.18
 psycopg-pool==3.2.1
 python-dotenv==1.0.1
 requests==2.31.0
+SQLAlchemy==2.0.29
 typing_extensions==4.11.0
 tzdata==2024.1
 urllib3==2.2.1
