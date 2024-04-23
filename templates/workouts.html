@@ -64,58 +64,77 @@
 </style>
 
 <script>
-    function loadExercises(muscle) {
-        fetch('/exercises/' + muscle)
-            .then(response => {
-                if (response.ok) {
-                    return response.json();
-                } else {
-                    throw new Error('Network response was not ok.');
-                }
-            })
-            .then(data => {
-                console.log("Processing data for:", muscle);  // Log data processing
-                console.log("Data received:", data);
+    // Display || API parameters
+    const muscleMap = {
+    "chest": "chest", // Holds 1 value
+    "back": "back", // Holds 1 value
+    "arms": ["lower arms", "upper arms"], // Array holding multiple values
+    "legs": ["lower legs", "upper legs"]  // Array holding multiple values
+};
 
-                const exercisesContainer = document.querySelector('.exercise-display');
-                exercisesContainer.innerHTML = `<h2 style="font-weight: bold; font-size: 24px;">${muscle.charAt(0).toUpperCase() + muscle.slice(1)} Exercises</h2>`;
 
-                data.exercises.forEach(exercise => {
-                    const titleCasedName = exercise.name.replace(/\w\S*/g, function (txt) {
-                        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); // Capitalizes the first letter of each word
-                    });
-
-                    const exerciseHtml = `
-        <div class="exercise-container">
-            <img src="${exercise.gifUrl}" alt="${titleCasedName}">
-            <h3><strong>${titleCasedName}</strong></h3>
-            <p>${exercise.instructions || 'No instructions provided.'}</p>
-        </div>
-    `;
-                    exercisesContainer.innerHTML += exerciseHtml;
-                });
-
-            })
-            .catch(error => {
-                console.error('Error loading exercises:', error);
-                alert('Failed to load exercises. Please check the console for more details.');
-            });
+function loadExercises(muscle) {
+    const apiMuscles = muscleMap[muscle.toLowerCase()]; // Retrieves the correct API parameter(s)
+    
+    if (Array.isArray(apiMuscles)) {
+        apiMuscles.forEach(apiMuscle => {
+            fetchExerciseData(apiMuscle); // Handle each muscle part separately
+        });
+    } else {
+        fetchExerciseData(apiMuscles); // Handle single muscle part
     }
-</script>
+}
 
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const btn = document.querySelector(".mobile-menu-button");
-        const menu = document.querySelector(".mobile-menu");
-
-        if (btn && menu) {
-            btn.addEventListener("click", () => {
-                menu.classList.toggle("hidden");
-            });
+function fetchExerciseData(apiMuscle) {
+    fetch('/exercises/' + apiMuscle)
+    .then(response => {
+        if (response.ok) {
+            return response.json();
         } else {
-            console.error("Menu button or mobile menu not found.");
+            throw new Error('Network response was not ok for ' + apiMuscle);
         }
+    })
+    .then(data => {
+        processExerciseData(apiMuscle, data); // Function to process and display data
+    })
+    .catch(error => {
+        console.error('Error loading exercises for ' + apiMuscle + ':', error);
+        alert('Failed to load exercises for ' + apiMuscle + '. Please check the console for more details.');
     });
+}
+
+function processExerciseData(muscle, data) {
+    const exercisesContainer = document.querySelector('.exercise-display');
+    exercisesContainer.innerHTML += `<h2 style="font-weight: bold; font-size: 24px;">${muscle.charAt(0).toUpperCase() + muscle.slice(1)} Exercises</h2>`;
+    
+    data.exercises.forEach(exercise => {
+        const titleCasedName = exercise.name.replace(/\w\S*/g, function (txt) {
+            return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); // Capitalizes the first letter of each word
+        });
+
+        const exerciseHtml = `
+            <div class="exercise-container">
+                <img src="${exercise.gifUrl}" alt="${titleCasedName}">
+                <h3><strong>${titleCasedName}</strong></h3>
+                <p>${exercise.instructions || 'No instructions provided.'}</p>
+            </div>
+        `;
+        exercisesContainer.innerHTML += exerciseHtml;
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const btn = document.querySelector(".mobile-menu-button");
+    const menu = document.querySelector(".mobile-menu");
+
+    if (btn && menu) {
+        btn.addEventListener("click", () => {
+            menu.classList.toggle("hidden");
+        });
+    } else {
+        console.error("Menu button or mobile menu not found.");
+    }
+});
 </script>
 
 
