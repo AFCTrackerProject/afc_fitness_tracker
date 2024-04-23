@@ -5,6 +5,7 @@ from database import fitness_repo
 from flask_bcrypt import Bcrypt
 import googlemaps
 import requests 
+from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros
 
 
 load_dotenv()
@@ -17,18 +18,6 @@ gmaps = googlemaps.Client(key=os.getenv('GOOGLE_MAPS_API_KEY'))
 
 bcrypt = Bcrypt(app)
 
-user_macros = {
-    'targets': {
-        'protein': 0,
-        'carbs': 0,
-        'fats': 0
-    },
-    'daily_intake': {
-        'protein': 0,
-        'carbs': 0,
-        'fats': 0
-    }
-}
 
 @app.get('/')
 def index():
@@ -49,24 +38,38 @@ def secret():
 @app.route('/macrotracker', methods=['GET', 'POST'])
 def macrotracker():
     if 'userid' not in session:
-        flash('You need to log in to use the macrotracker.','error')
+        flash('You need to log in to use the macrotracker.', 'error')
         return redirect('/login')
-    if request.method == 'POST':
-        if 'set_targets' in request.form:
-            # Logic for setting targets remains the same
-            user_macros['targets'] = {
-                'protein': int(request.form.get('target_protein', 0)),
-                'carbs': int(request.form.get('target_carbs', 0)),
-                'fats': int(request.form.get('target_fats', 0))
-            }
-        elif 'log_intake' in request.form:
-            # Adjusted logic for accumulating daily intake
-            user_macros['daily_intake']['protein'] += int(request.form.get('daily_protein', 0))
-            user_macros['daily_intake']['carbs'] += int(request.form.get('daily_carbs', 0))
-            user_macros['daily_intake']['fats'] += int(request.form.get('daily_fats', 0))
-        return redirect(url_for('macrotracker'))
 
-    return render_template('macrotracker.html', user_macros=user_macros)
+    if request.method == 'POST':
+        # Retrieve form data
+        meal_type = request.form.get('meal_type') 
+        name = request.form.get(f'name_{meal_type.lower()}')
+        caloriesconsumed = request.form.get(f'calories_{meal_type.lower()}')
+        proteinconsumed = request.form.get(f'protein_{meal_type.lower()}')
+        carbsconsumed = request.form.get(f'carbs_{meal_type.lower()}')
+        fatsconsumed = request.form.get(f'fat_{meal_type.lower()}')
+
+        # Call create_macros function to add a new entry
+        if create_macros(name, caloriesconsumed, proteinconsumed, carbsconsumed, fatsconsumed, meal_type):
+            print("Insertion successful") # PROVES MACRO CREATION IS SUCCESSFUL
+        else:
+            print("Insertion failed")
+
+    # Fetch all macros for display based on meal type
+    all_breakfast_macros = get_macros_by_meal_type('Breakfast')
+    all_lunch_macros = get_macros_by_meal_type('Lunch')
+    all_dinner_macros = get_macros_by_meal_type('Dinner')
+    all_snack_macros = get_macros_by_meal_type('Snack')
+    print("Snack:", all_snack_macros)
+
+
+
+    return render_template('macrotracker.html',
+                           all_breakfast_macros=all_breakfast_macros,
+                           all_lunch_macros=all_lunch_macros,
+                           all_dinner_macros=all_dinner_macros,
+                           all_snack_macros=all_snack_macros)
     
 
 @app.get('/forum')
@@ -116,8 +119,6 @@ def signup():
 
     # Render the signup form template for GET requests
     return render_template('signup.html')
-    
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -358,3 +359,4 @@ def exercises(muscle):
 
 if __name__ == "__main__":
     app.run(debug=True) 
+
