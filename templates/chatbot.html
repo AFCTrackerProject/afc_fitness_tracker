@@ -1,0 +1,59 @@
+{% extends "_layout.html" %}
+
+{% block title %}
+    Chatbot
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-8">
+    <h1 class="text-4xl font-bold text-gray-800 mb-4">Chatbot</h1>
+    <div id="chat-container" class="border rounded-lg p-4 mb-4 max-w-md mx-auto">
+        <div id="chat-messages" class="mb-4">
+            <!-- Chat messages will be displayed here -->
+        </div>
+        <div class="flex items-center">
+            <input type="text" id="user-input" class="flex-grow border rounded-l-md p-2 focus:outline-none focus:ring focus:ring-indigo-200" placeholder="Type your message...">
+            <button id="send-button" class="bg-indigo-500 text-white px-4 py-2 rounded-r-md hover:bg-indigo-600">Send</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Function to send user message to Flask backend and display response
+    async function sendMessage() {
+        const userInput = document.getElementById('user-input').value;
+        document.getElementById('user-input').value = '';
+
+        // Send user message to Flask backend
+        const response = await fetch('/chatbot', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ message: userInput })
+        });
+
+        const responseData = await response.json();
+
+        // Display bot response in chat display
+        const chatMessages = document.getElementById('chat-messages');
+        const userMessage = document.createElement('div');
+        userMessage.innerHTML = `<strong>You:</strong> ${userInput}`;
+        chatMessages.appendChild(userMessage);
+
+        const botMessage = document.createElement('div');
+        botMessage.innerHTML = `<strong>Bot:</strong> ${responseData.response}`;
+        chatMessages.appendChild(botMessage);
+    }
+
+    // Event listener for send button
+    document.getElementById('send-button').addEventListener('click', sendMessage);
+
+    // Event listener for pressing Enter key
+    document.getElementById('user-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+</script>
+{% endblock %}
