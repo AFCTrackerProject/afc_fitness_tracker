@@ -12,10 +12,11 @@
 
 <div class="flex justify-center items-center">
     <div class="w-full max-w-7xl">
-        <div class="bg-white shadow-xl rounded px-8 pt-6 pb-8 mb-4" style="border-top: 2px solid rgba(0, 0, 0, 0.05); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);">
+        <div class="bg-white shadow-xl rounded px-8 pt-6 pb-8 mb-4"
+            style="border-top: 2px solid rgba(0, 0, 0, 0.05); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);">
             <div class="flex">
-                {% for section in ['Chest', 'Back', 'Bicep', 'Legs'] %}
-                <a href="{{ section|lower }}" class="w-full max-w-80 mr-4">
+                {% for section in ['Chest', 'Back', 'Arms', 'Legs'] %}
+                <a onclick="loadExercises('{{ section|lower }}')" class="cursor-pointer w-full max-w-80 mr-4">
                     <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
                         <div class="border-b border-gray-200 pb-4 mb-4">
                             <div class="flex items-center">
@@ -30,8 +31,111 @@
                 </a>
                 {% endfor %}
             </div>
+            <!-- Container to display the fetched exercise data -->
+            <div class="exercise-display mt-4">
+                <!-- Dynamic content will be loaded here -->
+            </div>
         </div>
     </div>
 </div>
+
+<style>
+    .exercise-container {
+        margin-bottom: 20px;
+        border: 1px solid #ccc;
+        padding: 15px;
+    }
+
+    .exercise-container img {
+        max-width: 100%;
+        height: auto;
+        margin-bottom: 10px;
+    }
+
+    .exercise-container h3 {
+        margin-bottom: 5px;
+    }
+
+    .exercise-video {
+        width: 100%;
+        height: 315px;
+        margin-top: 10px;
+    }
+</style>
+
+<script>
+    // Display || API parameters
+    const muscleMap = {
+    "chest": "chest", // Holds 1 value
+    "back": "back", // Holds 1 value
+    "arms": ["lower arms", "upper arms"], // Array holding multiple values
+    "legs": ["lower legs", "upper legs"]  // Array holding multiple values
+};
+
+
+function loadExercises(muscle) {
+    const apiMuscles = muscleMap[muscle.toLowerCase()]; // Retrieves the correct API parameter(s)
+    
+    if (Array.isArray(apiMuscles)) {
+        apiMuscles.forEach(apiMuscle => {
+            fetchExerciseData(apiMuscle); // Handle each muscle part separately
+        });
+    } else {
+        fetchExerciseData(apiMuscles); // Handle single muscle part
+    }
+}
+
+function fetchExerciseData(apiMuscle) {
+    fetch('/exercises/' + apiMuscle)
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        } else {
+            throw new Error('Network response was not ok for ' + apiMuscle);
+        }
+    })
+    .then(data => {
+        processExerciseData(apiMuscle, data); // Function to process and display data
+    })
+    .catch(error => {
+        console.error('Error loading exercises for ' + apiMuscle + ':', error);
+        alert('Failed to load exercises for ' + apiMuscle + '. Please check the console for more details.');
+    });
+}
+
+function processExerciseData(muscle, data) {
+    const exercisesContainer = document.querySelector('.exercise-display');
+    exercisesContainer.innerHTML += `<h2 style="font-weight: bold; font-size: 24px;">${muscle.charAt(0).toUpperCase() + muscle.slice(1)} Exercises</h2>`;
+    
+    data.exercises.forEach(exercise => {
+        const titleCasedName = exercise.name.replace(/\w\S*/g, function (txt) {
+            return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); // Capitalizes the first letter of each word
+        });
+
+        const exerciseHtml = `
+            <div class="exercise-container">
+                <img src="${exercise.gifUrl}" alt="${titleCasedName}">
+                <h3><strong>${titleCasedName}</strong></h3>
+                <p>${exercise.instructions || 'No instructions provided.'}</p>
+            </div>
+        `;
+        exercisesContainer.innerHTML += exerciseHtml;
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const btn = document.querySelector(".mobile-menu-button");
+    const menu = document.querySelector(".mobile-menu");
+
+    if (btn && menu) {
+        btn.addEventListener("click", () => {
+            menu.classList.toggle("hidden");
+        });
+    } else {
+        console.error("Menu button or mobile menu not found.");
+    }
+});
+</script>
+
 
 {% endblock %}
