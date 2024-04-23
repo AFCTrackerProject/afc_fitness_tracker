@@ -13,8 +13,7 @@ app = Flask(__name__)
 
 app.secret_key = os.getenv('APP_SECRET_KEY')
 
-api_key = 'AIzaSyAKDHnR80au2cURkbiCZyKg061A1cZt3MY'
-gmaps = googlemaps.Client(key='AIzaSyAKDHnR80au2cURkbiCZyKg061A1cZt3MY')
+gmaps = googlemaps.Client(key=os.getenv('GOOGLE_MAPS_API_KEY'))
 
 bcrypt = Bcrypt(app)
 
@@ -170,22 +169,6 @@ def profile():
     user = fitness_repo.get_user_by_id(userid)
     return render_template('profile.html', user=user)
 
-@app.route('/chest')
-def chest():
-    return redirect('https://www.muscleandstrength.com/workouts/chest')
-
-@app.route('/back')
-def back():
-    return redirect('https://www.muscleandstrength.com/workouts/back')
-
-@app.route('/bicep')
-def bicep():
-    return redirect('https://www.muscleandstrength.com/workouts/biceps')
-
-@app.route('/legs')
-def legs():
-    return redirect('https://www.muscleandstrength.com/workouts/legs')
-
 @app.route('/finder.html')
 def finder():
     if 'userid' not in session:
@@ -335,6 +318,42 @@ def inject_logged_in():
     # Check if user is logged in
     logged_in = 'userid' in session
     return dict(logged_in=logged_in)
+
+# Exercises API
+def get_exercises_by_muscle(muscle):
+    url = "https://exercisedb.p.rapidapi.com/exercises/bodyPart/" + muscle
+    headers = {
+        'x-rapidapi-host': "exercisedb.p.rapidapi.com",
+        'x-rapidapi-key': os.getenv('EXERCISE_DB_API_KEY')
+    }
+    response = requests.request("GET", url, headers=headers)
+    return response.json()
+
+def search_youtube(query):
+    url = "https://youtube-search-and-download.p.rapidapi.com/search"
+    querystring = {"query": query}
+    headers = {
+        'x-rapidapi-host': "youtube-search-and-download.p.rapidapi.com",
+        'x-rapidapi-key': os.getenv('YOUTUBE_API_KEY')
+    }
+    response = requests.request("GET", url, headers=headers, params=querystring)
+    return response.json()
+
+
+@app.route('/exercises/<muscle>')
+def exercises(muscle):
+    print(f"Fetching exercises for muscle: {muscle}")  # Console log
+    try:
+        exercises = get_exercises_by_muscle(muscle)
+        videos = search_youtube(muscle + ' exercises')
+        return jsonify({'exercises': exercises, 'videos': videos})
+    except Exception as e:
+        print(f"Error: {e}")  # Console log for the error
+        return jsonify({'error': str(e)}), 500
+
+
+
+# End Exercises API
 
 
 if __name__ == "__main__":
