@@ -78,26 +78,21 @@
                 console.log("Data received:", data);
 
                 const exercisesContainer = document.querySelector('.exercise-display');
-                exercisesContainer.innerHTML = `<h2>${muscle.charAt(0).toUpperCase() + muscle.slice(1)} Exercises</h2>`;
+                exercisesContainer.innerHTML = `<h2 style="font-weight: bold; font-size: 24px;">${muscle.charAt(0).toUpperCase() + muscle.slice(1)} Exercises</h2>`;
 
                 data.exercises.forEach(exercise => {
-                    // Assuming each exercise object has a property named 'imageUrl'
-                    const exerciseHtml = `
-                        <div class="exercise-container">
-                            <img src="${exercise.gifUrl}" alt="${exercise.name}">
-                            <h3>${exercise.name}</h3>
-                            <p>${exercise.instructions || 'No instructions provided.'}</p>
-                        </div>
-                    `;
-                    exercisesContainer.innerHTML += exerciseHtml;
-                });
+                    const titleCasedName = exercise.name.replace(/\w\S*/g, function (txt) {
+                        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); // Capitalizes the first letter of each word
+                    });
 
-                // Assuming the data.videos.results is an array of video objects with a property named 'id'
-                data.videos.results.forEach(video => {
-                    const videoHtml = `
-                        <iframe class="exercise-video" src="https://www.youtube.com/embed/${video.id}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                    `;
-                    exercisesContainer.innerHTML += videoHtml;
+                    const exerciseHtml = `
+        <div class="exercise-container">
+            <img src="${exercise.gifUrl}" alt="${titleCasedName}">
+            <h3><strong>${titleCasedName}</strong></h3>
+            <p>${exercise.instructions || 'No instructions provided.'}</p>
+        </div>
+    `;
+                    exercisesContainer.innerHTML += exerciseHtml;
                 });
 
             })
