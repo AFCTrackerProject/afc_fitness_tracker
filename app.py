@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from database import fitness_repo
 from flask_bcrypt import Bcrypt
 import googlemaps
+import openai
 import requests 
 from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros
 
@@ -13,8 +14,14 @@ load_dotenv()
 app = Flask(__name__)
 
 app.secret_key = os.getenv('APP_SECRET_KEY')
+api_key = os.getenv('GMAPS_API_KEY')
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
-gmaps = googlemaps.Client(key=os.getenv('GOOGLE_MAPS_API_KEY'))
+
+gmaps = googlemaps.Client(key=api_key)
+
+# gmaps = googlemaps.Client(key=os.getenv('GOOGLE_MAPS_API_KEY'))
+
 
 bcrypt = Bcrypt(app)
 
@@ -144,16 +151,25 @@ def login():
             flash('Username and password do not match!', 'error')
             return render_template('login.html', show_popup=True)
         
-        # Login successful, store user information in session
+        # Set userid and username in session
         session['userid'] = user['userid']
         session['username'] = user['username']
         
+        # Flash login successful message
         flash('Login successful!', 'success')
-        return redirect(url_for('secret'))  # Redirect to secret page after successful login
-    
+        
+        # Check if user is logging in for the first time
+        if 'first_login' not in session:
+            # Store the first login flag in the session
+            session['first_login'] = True
+            return redirect(url_for('secret'))  # Redirect to secret page for first-time login
+        else:
+            # Redirect to profile page for subsequent logins
+            return redirect(url_for('profile'))
     
     # If GET request (i.e., accessing the login page)
     return render_template('login.html')
+
 
 @app.post('/logout')
 def logout():
@@ -189,7 +205,7 @@ def find_places():
         print("Received form data - Place type:", place_type)
 
         # Use Google Maps Geocoding API to convert ZIP code to coordinates
-        geocoding_api_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={zip_code}&key=AIzaSyAKDHnR80au2cURkbiCZyKg061A1cZt3MY"
+        geocoding_api_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={zip_code}&key={api_key}"
         geocoding_response = requests.get(geocoding_api_url)
         geocoding_data = geocoding_response.json()
 
@@ -246,6 +262,32 @@ def find_places():
     except Exception as e:
         # Handle API error
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/chatbot.html')
+def chatbot():
+    return render_template('chatbot.html')
+
+# Route to handle user input and get bot response
+@app.route('/chatbot', methods=['POST'])
+def handle_message():
+    data = request.get_json()
+    message = data['message']
+
+    # Call OpenAI API to get bot response
+    response = get_bot_response(message)
+    print(response)
+
+    return jsonify({'response': response})
+
+# Function to get bot response using OpenAI API
+def get_bot_response(message):
+    # Call the OpenAI API to generate a response
+    response = openai.Completion.create(
+        engine="gpt-3.5-turbo-instruct",
+        prompt=message,
+        max_tokens=1000
+    )
+    return response.choices[0].text.strip()
 
 @app.route('/submit_question', methods=['POST'])
 def handle_question_submission():
@@ -287,12 +329,13 @@ def handle_question_submission():
 
     return redirect(url_for('profile'))
 
-@app.route('/updateprofile', methods=['POST','GET'])
+# Update the user's profile picture field in the database
+@app.route('/updateprofile', methods=['POST', 'GET'])
 def updateprofile():
     if 'userid' not in session:
-            flash('You need to log in to update your profile.','error')
-            return redirect('/login')
-    
+        flash('You need to log in to update your profile.', 'error')
+        return redirect('/login')
+
     if request.method == 'POST':
         # Retrieve form data
         email = request.form.get('email')
@@ -301,17 +344,36 @@ def updateprofile():
         height = request.form.get('height')
         weight = request.form.get('weight')
 
-        # Update
-        success = fitness_repo.update_user_profile(userid=session['userid'], email=email, dateofbirth=dateofbirth, gender=gender, height=height, weight=weight)
+        # Handle profile picture upload
+        profile_picture = request.files.get('profilepicture')
+        profile_picture_data = None  # Placeholder for profile picture data
+
+        if profile_picture:
+            # Read the profile picture data
+            profile_picture_data = profile_picture.read()
+
+        # Update user profile in the database
+        success = fitness_repo.update_user_profile(
+            userid=session['userid'],
+            email=email,
+            dateofbirth=dateofbirth,
+            gender=gender,
+            height=height,
+            weight=weight,
+            profilepicture=profile_picture_data  # Pass profile picture data to function
+        )
 
         if success:
             flash('Profile updated successfully!', 'success')
         else:
             flash('Failed to update profile. Please try again.', 'error')
-    
+
     # If it's a GET request (initial load or refresh), render the updateprofile.html template
     user = fitness_repo.get_user_by_id(session['userid'])
     return render_template('updateprofile.html', user=user)
+
+
+
 
 
 @app.context_processor
