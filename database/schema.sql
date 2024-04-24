@@ -10,7 +10,8 @@ CREATE TABLE Users (
     Gender VARCHAR(10) CHECK (Gender IN ('Male', 'Female', 'Other')),
     Height FLOAT,
     Weight FLOAT,
-    JoinDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    JoinDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ProfilePicture VARCHAR(255)
 );
 
 

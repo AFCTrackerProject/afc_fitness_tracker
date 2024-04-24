@@ -13,13 +13,6 @@
         margin-bottom: 12px; /* Add vertical spacing between input fields */
         box-sizing: border-box; /* Ensure padding is included in width */
     }
-    .form-select {
-        height: 40px;
-        width: 100%; /* Set select width to 100% for responsiveness */
-        padding: 8px;
-        margin-bottom: 12px;
-        box-sizing: border-box;
-    }
 </style>
 <div class="container mx-auto mt-10">
     <!-- Flash messages -->
@@ -35,7 +28,12 @@
     <h2 class="big-heading">Update your profile below:</h2>
 
     <!-- Edit Profile Form -->
-    <form method="post" action="{{ url_for('updateprofile') }}" class="bg-white p-4 rounded-lg shadow-md">
+    <form method="post" action="{{ url_for('updateprofile') }}" class="bg-white p-4 rounded-lg shadow-md" enctype="multipart/form-data">
+        <!-- New input field for profile picture -->
+        <div class="mb-4">
+            <label for="profilepicture" class="block text-sm font-medium text-gray-700">Profile Picture:</label>
+            <input type="file" id="profilepicture" name="profilepicture" accept="image/*" class="form-input">
+        </div>
         <div class="mb-4">
             <label for="email" class="block text-sm font-medium text-gray-700">Email:</label>
             <input type="email" id="email" name="email" value="{{ user.email }}" required class="form-input">
