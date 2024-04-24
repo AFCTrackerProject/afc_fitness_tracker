@@ -15,7 +15,8 @@ app = Flask(__name__)
 
 app.secret_key = os.getenv('APP_SECRET_KEY')
 api_key = os.getenv('GMAPS_API_KEY')
-openai.api_key = os.getenv('OPENAI_API_KEY')
+#openai.api_key = os.getenv('OPENAI_API_KEY')
+openai.api_key = 'sk-proj-JcnRiUdZnNmohz8uNyr8T3BlbkFJtuweqicLM3yEWsQSuiEn'
 
 
 gmaps = googlemaps.Client(key=api_key)
