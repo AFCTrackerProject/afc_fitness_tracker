@@ -1,95 +1,416 @@
 {% extends "_layout.html" %}
 
 {% block content %}
-<div class="container mx-auto px-6 py-8">
-    <h1 class="text-4xl font-bold text-center text-gray-800 mb-4">Macro Tracker</h1>
-    <!-- Dynamic Progress Bar -->
-    <div class="bg-gray-200 rounded-full h-6 mb-6">
-        <div class="bg-blue-600 h-6 rounded-full" style="width: 25%;"></div> <!-- Example width, update dynamically -->
-    </div>
-    <div class="text-center mb-8">
-        <!-- Example macro goals and intake values, replace with dynamic data -->
-        <p><strong>Calories:</strong> 500/2000 cal (25%)</p>
-        <p><strong>Protein:</strong> 30/150g</p>
-        <p><strong>Carbs:</strong> 45/300g</p>
-        <p><strong>Fats:</strong> 10/70g</p>
-    </div>
+    <!-- Include JQUERY / Slick Carousel CSS/JS / JQuery UI -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.min.css">
+    <style>
+        .slider {
+            width: 80%;
+            margin: 0 auto;
+            height: 800px; 
+            overflow: hidden;
+            position: relative; 
+        }
+        .slider img {
+            width: 100%; 
+            height: auto;
+            object-fit: cover;
+        }
+        .slider .slide {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative;
+            background-color: #007bff; /* Default background color */
+            border-radius: 10px; /* Rounded corners */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Shadow effect */
+            color: #fff; /* Set text color to white */
+        }
+        .slider .slide:nth-child(odd) {
+            background-color: #007bff; 
+        }
+        .slider .slide:nth-child(even) {
+            background-color: #ff6c00; 
+        }
+        .slick-list {
+            overflow: hidden; 
+        }
+        .slick-prev,
+        .slick-next {
+            font-size: 24px;
+            color: #fff;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1;
+            cursor: pointer;
+        }
+        .slick-prev {
+            left: 2px;
+        }
+        .slick-next {
+            right: 2px;
+        }
+        .slick-dots {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .slick-dots li {
+            margin: 0 5px;
+        }
+        .slick-dots button {
+            font-size: 12px;
+            color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.5);
+            border: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .slick-dots button:hover,
+        .slick-dots button:focus {
+            background-color: rgba(255, 217, 0, 0.8);
+        }
+        .slider .text-content {
+            width: 45%;
+            padding: 20px;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .slider .text-content {
+            width: 45%;
+            padding: 20px;
+            color: #fff; 
+        }
+    </style>
+    <script>
+        $(document).ready(function() {
+            // Initialize Slick Carousel
+            $('.slider').slick({
+                slidesToShow: 1,
+                slidesToScroll: 1,
+                autoplay: true,
+                autoplaySpeed: 5000,
+                dots: true,
+                arrows: true,
+                prevArrow: '<button type="button" class="slick-prev">❮</button>',
+                nextArrow: '<button type="button" class="slick-next">❯</button>'
+            });
+        });
+    </script>
 
-    <!-- Meal Sections with Add Food Forms -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {% for meal in ["Breakfast", "Lunch", "Dinner", "Snacks"] %}
-        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-            <h3 class="text-2xl font-bold mb-4">{{ meal }}</h3>
-            <form method="POST" action="/macrotracker/add_food">
-                <!-- Each meal form, dynamic insertion of meals to be implemented -->
-                <div class="mb-4">
-                    <input type="hidden" name="meal_type" value="{{ meal | lower }}">
-                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="food_name" type="text" placeholder="Enter food name">
-                    <button class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
-                        Add Food
-                    </button>
-                </div>
-            </form>
+    <div class="container mx-auto px-6 py-8">
+        <h1 class="text-4xl font-bold text-center text-gray-800 mb-4">Macro Tracker</h1>
+        <!-- Dynamic Progress Bar -->
+        <div class="bg-gray-200 rounded-full h-6 mb-6">
+            <div class="bg-blue-600 h-6 rounded-full" style="width: 25%;"></div> <!-- Example width, update dynamically -->
         </div>
-        {% endfor %}
-    </div>
+        <div class="text-center mb-8">
+            <!-- Example macro goals and intake values, replace with dynamic data -->
+            <p><strong>Calories:</strong> 500/2000 cal (25%)</p>
+            <p><strong>Protein:</strong> 30/150g</p>
+            <p><strong>Carbs:</strong> 45/300g</p>
+            <p><strong>Fats:</strong> 10/70g</p>
+        </div>
 
-    <!-- Set Macro Targets and Log Daily Intake Forms -->
-    <div class="flex justify-center items-center">
-        <div class="w-full max-w-3xl">
-            <!-- Set Macro Targets -->
-            <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-                <h2 class="text-2xl font-bold mb-4">Set Your Macro Targets</h2>
-                <form method="POST" action="/macrotracker/set_targets">
-                    <div class="mb-4">
-                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="target_protein" type="text" placeholder="Protein goal (g)">
-                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="target_carbs" type="text" placeholder="Carbs goal (g)">
-                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="target_fats" type="text" placeholder="Fats goal (g)">
-                    </div>
-                    <button class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
-                        Set Targets
-                    </button>
-                </form>
-            </div>
-
-            <!-- Log Daily Intake -->
-            <div class="bg-white shadow-md rounded px-8 pt-6 pb-8">
-                <h2 class="text-2xl font-bold mb-4">Log Your Daily Intake</h2>
-                <form method="POST" action="/macrotracker/log_intake">
-                    <div class="mb-4">
-                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="daily_protein" type="text" placeholder="Protein intake today (g)">
-                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="daily_carbs" type="text" placeholder="Carbs intake today (g)">
-                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="daily_fats" type="text" placeholder="Fats intake today (g)">
-                    </div>
-                    <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
-                        Log Intake
-                    </button>
-                </form>
-            </div>
-             <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-                <h2 class="text-2xl font-bold mb-4">Log Your Daily Intake</h2>
-                <form method="POST" action="/macrotracker">
-                    <input type="hidden" name="log_intake" value="true">
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2" for="daily_protein">Protein (g) Today</label>
-                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="daily_protein" type="text" placeholder="Enter today's protein intake">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2" for="daily_carbs">Carbs (g) Today</label>
-                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="daily_carbs" type="text" placeholder="Enter today's carbs intake">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2" for="daily_fats">Fats (g) Today</label>
-                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="daily_fats" type="text" placeholder="Enter today's fats intake">
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
-                            Log Intake
+        <!-- Slider container -->
+        <div class="slider">
+            <div class="slide">
+                <h1 class="text-4xl font-bold mb-4">Breakfast</h1>
+                <div class="text-content">
+                    <form method="POST" action="{{ url_for('macrotracker') }}">
+                        <input type="hidden" name="meal_type" value="Breakfast"> 
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="name_breakfast">Name</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="name_breakfast" type="text" placeholder="What did you eat?">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="calories_breakfast">Calories</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="calories_breakfast" type="text" placeholder="Enter calorie intake">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="protein_breakfast">Protein (g)</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="protein_breakfast" type="text" placeholder="Enter protein intake">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="carbs_breakfast">Carbs (g)</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="carbs_breakfast" type="text" placeholder="Enter carbs intake">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="fat_breakfast">Fat (g)</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="fat_breakfast" type="text" placeholder="Enter fat intake">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="quantity_breakfast">Quantity</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="quantity_breakfast" type="text" placeholder="Enter quantity">
+                        </div>
+                        <button class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                            Log Meal
                         </button>
-                    </div>
-                </form>
+                    </form>
+                </div>
+            </div>
+            <div class="slide">
+                <h1 class="text-4xl font-bold mb-4">Lunch</h1>
+                <div class="text-content">
+                    <form method="POST" action="{{ url_for('macrotracker') }}">
+                        <input type="hidden" name="meal_type" value="Lunch"> <!-- Add a hidden input for meal type -->
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="name_lunch">Name</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="name_lunch" type="text" placeholder="What did you eat?">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="calories_lunch">Calories</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="calories_lunch" type="text" placeholder="Enter calorie intake">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="protein_lunch">Protein (g)</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="protein_lunch" type="text" placeholder="Enter protein intake">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="carbs_lunch">Carbs (g)</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="carbs_lunch" type="text" placeholder="Enter carbs intake">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="fat_lunch">Fat (g)</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="fat_lunch" type="text" placeholder="Enter fat intake">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="quantity_lunch">Quantity</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="quantity_lunch" type="text" placeholder="Enter quantity">
+                        </div>
+                        <button class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                            Log Meal
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="slide">
+                <h1 class="text-4xl font-bold mb-4">Dinner</h1>
+                <div class="text-content">
+                    <form method="POST" action="{{ url_for('macrotracker') }}">
+                        <input type="hidden" name="meal_type" value="Dinner"> <!-- Add a hidden input for meal type -->
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="name_dinner">Name</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="name_dinner" type="text" placeholder="What did you eat?">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="calories_dinner">Calories</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="calories_dinner" type="text" placeholder="Enter calorie intake">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="protein_dinner">Protein (g)</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="protein_dinner" type="text" placeholder="Enter protein intake">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="carbs_dinner">Carbs (g)</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="carbs_dinner" type="text" placeholder="Enter carbs intake">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="fat_dinner">Fat (g)</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="fat_dinner" type="text" placeholder="Enter fat intake">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="quantity_dinner">Quantity</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="quantity_dinner" type="text" placeholder="Enter quantity">
+                        </div>
+                        <button class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                            Log Meal
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="slide">
+                <h1 class="text-4xl font-bold mb-4">Snacks</h1>
+                <div class="text-content">
+                    <form method="POST" action="{{ url_for('macrotracker') }}">
+                        <input type="hidden" name="meal_type" value="Snack"> <!-- Add a hidden input for meal type -->
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="name_snacks">Name</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="name_snack" type="text" placeholder="What did you eat?">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="calories_snacks">Calories</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="calories_snack" type="text" placeholder="Enter calorie intake">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="protein_snacks">Protein (g)</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="protein_snack" type="text" placeholder="Enter protein intake">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="carbs_snacks">Carbs (g)</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="carbs_snack" type="text" placeholder="Enter carbs intake">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="fat_snacks">Fat (g)</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="fat_snack" type="text" placeholder="Enter fat intake">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="quantity_snacks">Quantity</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" name="quantity_snack" type="text" placeholder="Enter quantity">
+                        </div>
+                        <button class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                            Log Meal
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
+    
+    <p>{{ all_snacks_macros }}</p>
+
+    <!-- Log Table -->
+    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <h2 class="text-2xl font-bold mb-4">Breakfast Log</h2>
+        {% if all_breakfast_macros %}
+        <table class="w-full table-auto">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2 bg-gray-800 text-white">Name</th>
+                    <th class="px-4 py-2 bg-gray-800 text-white">Calories Consumed</th>
+                    <th class="px-4 py-2 bg-gray-800 text-white">Protein</th>
+                    <th class="px-4 py-2 bg-gray-800 text-white">Carbohydrates</th>
+                    <th class="px-4 py-2 bg-gray-800 text-white">Fats</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log_entry in all_breakfast_macros %}
+                <tr>
+                    <td class="border px-4 py-2">{{ log_entry['name'] }}</td>
+                    <td class="border px-4 py-2">{{ log_entry['caloriesconsumed'] }}</td>
+                    <td class="border px-4 py-2">{{ log_entry['proteinconsumed'] }}</td>
+                    <td class="border px-4 py-2">{{ log_entry['carbsconsumed'] }}</td>
+                    <td class="border px-4 py-2">{{ log_entry['fatsconsumed'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No data available.</p>
+        {% endif %}
+    </div>
+    <!-- Log Table -->
+    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <h2 class="text-2xl font-bold mb-4">Lunch Log</h2>
+        {% if all_lunch_macros %}
+        <table class="w-full table-auto">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2 bg-gray-800 text-white">Name</th>
+                    <th class="px-4 py-2 bg-gray-800 text-white">Calories Consumed</th>
+                    <th class="px-4 py-2 bg-gray-800 text-white">Protein</th>
+                    <th class="px-4 py-2 bg-gray-800 text-white">Carbohydrates</th>
+                    <th class="px-4 py-2 bg-gray-800 text-white">Fats</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log_entry in all_lunch_macros %}
+                <tr>
+                    <td class="border px-4 py-2">{{ log_entry['name'] }}</td>
+                    <td class="border px-4 py-2">{{ log_entry['caloriesconsumed'] }}</td>
+                    <td class="border px-4 py-2">{{ log_entry['proteinconsumed'] }}</td>
+                    <td class="border px-4 py-2">{{ log_entry['carbsconsumed'] }}</td>
+                    <td class="border px-4 py-2">{{ log_entry['fatsconsumed'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No data available.</p>
+        {% endif %}
+    </div>
+    <!-- Log Table -->
+<div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+    <h2 class="text-2xl font-bold mb-4">Dinner Log</h2>
+    {% if all_dinner_macros %}
+    <table class="w-full table-auto">
+        <thead>
+            <tr>
+                <th class="px-4 py-2 bg-gray-800 text-white">Name</th>
+                <th class="px-4 py-2 bg-gray-800 text-white">Calories Consumed</th>
+                <th class="px-4 py-2 bg-gray-800 text-white">Protein</th>
+                <th class="px-4 py-2 bg-gray-800 text-white">Carbohydrates</th>
+                <th class="px-4 py-2 bg-gray-800 text-white">Fats</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log_entry in all_dinner_macros %}
+            <tr>
+                <td class="border px-4 py-2">{{ log_entry['name'] }}</td>
+                <td class="border px-4 py-2">{{ log_entry['caloriesconsumed'] }}</td>
+                <td class="border px-4 py-2">{{ log_entry['proteinconsumed'] }}</td>
+                <td class="border px-4 py-2">{{ log_entry['carbsconsumed'] }}</td>
+                <td class="border px-4 py-2">{{ log_entry['fatsconsumed'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No data available.</p>
+    {% endif %}
 </div>
+<!-- Snacks Log -->
+<div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+    <h2 class="text-2xl font-bold mb-4">Snacks Log</h2>
+    {% if all_snack_macros %}
+    <table class="w-full table-auto">
+        <thead>
+            <tr>
+                <th class="px-4 py-2 bg-gray-800 text-white">Name</th>
+                <th class="px-4 py-2 bg-gray-800 text-white">Calories Consumed</th>
+                <th class="px-4 py-2 bg-gray-800 text-white">Protein</th>
+                <th class="px-4 py-2 bg-gray-800 text-white">Carbohydrates</th>
+                <th class="px-4 py-2 bg-gray-800 text-white">Fats</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log_entry in all_snack_macros %}
+            <tr>
+                <td class="border px-4 py-2">{{ log_entry['name'] }}</td>
+                <td class="border px-4 py-2">{{ log_entry['caloriesconsumed'] }}</td>
+                <td class="border px-4 py-2">{{ log_entry['proteinconsumed'] }}</td>
+                <td class="border px-4 py-2">{{ log_entry['carbsconsumed'] }}</td>
+                <td class="border px-4 py-2">{{ log_entry['fatsconsumed'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No data available.</p>
+    {% endif %}
+</div>
+
 {% endblock %}

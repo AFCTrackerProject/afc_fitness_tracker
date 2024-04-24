@@ -6,6 +6,7 @@ from flask_bcrypt import Bcrypt
 import googlemaps
 import openai
 import requests 
+from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros
 
 
 load_dotenv()
@@ -19,20 +20,11 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 
 gmaps = googlemaps.Client(key=api_key)
 
+# gmaps = googlemaps.Client(key=os.getenv('GOOGLE_MAPS_API_KEY'))
+
+
 bcrypt = Bcrypt(app)
 
-user_macros = {
-    'targets': {
-        'protein': 0,
-        'carbs': 0,
-        'fats': 0
-    },
-    'daily_intake': {
-        'protein': 0,
-        'carbs': 0,
-        'fats': 0
-    }
-}
 
 @app.get('/')
 def index():
@@ -53,24 +45,38 @@ def secret():
 @app.route('/macrotracker', methods=['GET', 'POST'])
 def macrotracker():
     if 'userid' not in session:
-        flash('You need to log in to use the macrotracker.','error')
+        flash('You need to log in to use the macrotracker.', 'error')
         return redirect('/login')
-    if request.method == 'POST':
-        if 'set_targets' in request.form:
-            # Logic for setting targets remains the same
-            user_macros['targets'] = {
-                'protein': int(request.form.get('target_protein', 0)),
-                'carbs': int(request.form.get('target_carbs', 0)),
-                'fats': int(request.form.get('target_fats', 0))
-            }
-        elif 'log_intake' in request.form:
-            # Adjusted logic for accumulating daily intake
-            user_macros['daily_intake']['protein'] += int(request.form.get('daily_protein', 0))
-            user_macros['daily_intake']['carbs'] += int(request.form.get('daily_carbs', 0))
-            user_macros['daily_intake']['fats'] += int(request.form.get('daily_fats', 0))
-        return redirect(url_for('macrotracker'))
 
-    return render_template('macrotracker.html', user_macros=user_macros)
+    if request.method == 'POST':
+        # Retrieve form data
+        meal_type = request.form.get('meal_type') 
+        name = request.form.get(f'name_{meal_type.lower()}')
+        caloriesconsumed = request.form.get(f'calories_{meal_type.lower()}')
+        proteinconsumed = request.form.get(f'protein_{meal_type.lower()}')
+        carbsconsumed = request.form.get(f'carbs_{meal_type.lower()}')
+        fatsconsumed = request.form.get(f'fat_{meal_type.lower()}')
+
+        # Call create_macros function to add a new entry
+        if create_macros(name, caloriesconsumed, proteinconsumed, carbsconsumed, fatsconsumed, meal_type):
+            print("Insertion successful") # PROVES MACRO CREATION IS SUCCESSFUL
+        else:
+            print("Insertion failed")
+
+    # Fetch all macros for display based on meal type
+    all_breakfast_macros = get_macros_by_meal_type('Breakfast')
+    all_lunch_macros = get_macros_by_meal_type('Lunch')
+    all_dinner_macros = get_macros_by_meal_type('Dinner')
+    all_snack_macros = get_macros_by_meal_type('Snack')
+    print("Snack:", all_snack_macros)
+
+
+
+    return render_template('macrotracker.html',
+                           all_breakfast_macros=all_breakfast_macros,
+                           all_lunch_macros=all_lunch_macros,
+                           all_dinner_macros=all_dinner_macros,
+                           all_snack_macros=all_snack_macros)
     
 
 @app.get('/forum')
@@ -120,8 +126,6 @@ def signup():
 
     # Render the signup form template for GET requests
     return render_template('signup.html')
-    
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -181,22 +185,6 @@ def profile():
     userid = session.get('userid')
     user = fitness_repo.get_user_by_id(userid)
     return render_template('profile.html', user=user)
-
-@app.route('/chest')
-def chest():
-    return redirect('https://www.muscleandstrength.com/workouts/chest')
-
-@app.route('/back')
-def back():
-    return redirect('https://www.muscleandstrength.com/workouts/back')
-
-@app.route('/bicep')
-def bicep():
-    return redirect('https://www.muscleandstrength.com/workouts/biceps')
-
-@app.route('/legs')
-def legs():
-    return redirect('https://www.muscleandstrength.com/workouts/legs')
 
 @app.route('/finder.html')
 def finder():
@@ -394,6 +382,43 @@ def inject_logged_in():
     logged_in = 'userid' in session
     return dict(logged_in=logged_in)
 
+# Exercises API
+def get_exercises_by_muscle(muscle):
+    url = "https://exercisedb.p.rapidapi.com/exercises/bodyPart/" + muscle
+    headers = {
+        'x-rapidapi-host': "exercisedb.p.rapidapi.com",
+        'x-rapidapi-key': os.getenv('EXERCISE_DB_API_KEY')
+    }
+    response = requests.request("GET", url, headers=headers)
+    return response.json()
+
+def search_youtube(query):
+    url = "https://youtube-search-and-download.p.rapidapi.com/search"
+    querystring = {"query": query}
+    headers = {
+        'x-rapidapi-host': "youtube-search-and-download.p.rapidapi.com",
+        'x-rapidapi-key': os.getenv('YOUTUBE_API_KEY')
+    }
+    response = requests.request("GET", url, headers=headers, params=querystring)
+    return response.json()
+
+
+@app.route('/exercises/<muscle>')
+def exercises(muscle):
+    print(f"Fetching exercises for muscle: {muscle}")  # Console log
+    try:
+        exercises = get_exercises_by_muscle(muscle)
+        videos = search_youtube(muscle + ' exercises')
+        return jsonify({'exercises': exercises, 'videos': videos})
+    except Exception as e:
+        print(f"Error: {e}")  # Console log for the error
+        return jsonify({'error': str(e)}), 500
+
+
+
+# End Exercises API
+
 
 if __name__ == "__main__":
     app.run(debug=True) 
+
