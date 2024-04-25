@@ -10,8 +10,7 @@ CREATE TABLE Users (
     Gender VARCHAR(10) CHECK (Gender IN ('Male', 'Female', 'Other')),
     Height FLOAT,
     Weight FLOAT,
-    JoinDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    ProfilePicture VARCHAR(255)
+    JoinDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -78,3 +77,19 @@ CREATE TABLE Achievements (
     FOREIGN KEY (UserID) REFERENCES Users(UserID)
 );
 
+CREATE TYPE meal_type AS ENUM ('Breakfast', 'Lunch', 'Dinner', 'Snack');
+
+CREATE TABLE MacroTracker (
+    TrackerID SERIAL PRIMARY KEY,
+    UserID INT,
+    LogTime TIME,
+    name VARCHAR(100),
+    CaloriesConsumed INT,
+    ProteinConsumed FLOAT,
+    CarbsConsumed FLOAT,
+    FatsConsumed FLOAT,
+    Meal_Type meal_type,
+    FOREIGN KEY (UserID) REFERENCES Users(UserID)
+
+
+);
