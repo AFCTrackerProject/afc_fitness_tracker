@@ -74,16 +74,19 @@
 
 
 function loadExercises(muscle) {
-    const apiMuscles = muscleMap[muscle.toLowerCase()]; // Retrieves the correct API parameter(s)
+    const exercisesContainer = document.querySelector('.exercise-display');
+    exercisesContainer.innerHTML = '';  // Clear the previous exercises
+    const apiMuscles = muscleMap[muscle.toLowerCase()];  // Retrieves the correct API parameter(s)
     
     if (Array.isArray(apiMuscles)) {
         apiMuscles.forEach(apiMuscle => {
-            fetchExerciseData(apiMuscle); // Handle each muscle part separately
+            fetchExerciseData(apiMuscle);  // Handle each muscle part separately
         });
     } else {
-        fetchExerciseData(apiMuscles); // Handle single muscle part
+        fetchExerciseData(apiMuscles);  // Handle single muscle part
     }
 }
+
 
 function fetchExerciseData(apiMuscle) {
     fetch('/exercises/' + apiMuscle)
