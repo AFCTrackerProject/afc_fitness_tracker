@@ -26,7 +26,7 @@ def create_user(firstname: str, lastname: str, email: str, username: str, passwo
                 INSERT INTO users (firstname, lastname, email, username, password)
                 VALUES (%s, %s, %s, %s, %s)
             """, (firstname, lastname, email, username, password))
-            conn.commit()  # Commit the INSERT operation
+            conn.commit()  
 
     # Optionally return user data or a success message
     return {
@@ -88,8 +88,7 @@ def get_user_by_id(userid: int) -> dict[str, Any] | None:
                                 dateofbirth,
                                 gender,
                                 height,
-                                weight,
-                                ProfilePicture
+                                weight
                             FROM
                                 users
                             WHERE userid = %s
@@ -109,5 +108,3 @@ def update_user_profile(userid: int, email: str, dateofbirth: str, gender: str, 
                 conn.commit()   
 
                 return cur.rowcount > 0  # Check if the update was successful
-
-

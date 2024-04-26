@@ -57,6 +57,13 @@ def macrotracker():
         proteinconsumed = request.form.get(f'protein_{meal_type.lower()}')
         carbsconsumed = request.form.get(f'carbs_{meal_type.lower()}')
         fatsconsumed = request.form.get(f'fat_{meal_type.lower()}')
+        quantity = request.form.get(f'quantity_{meal_type.lower()}')
+
+        # Convert quantities to floats for multiplication
+        caloriesconsumed = float(caloriesconsumed) * float(quantity)
+        proteinconsumed = float(proteinconsumed) * float(quantity)
+        carbsconsumed = float(carbsconsumed) * float(quantity)
+        fatsconsumed = float(fatsconsumed) * float(quantity)
 
         # Call create_macros function to add a new entry
         if create_macros(name, caloriesconsumed, proteinconsumed, carbsconsumed, fatsconsumed, meal_type):
@@ -69,15 +76,62 @@ def macrotracker():
     all_lunch_macros = get_macros_by_meal_type('Lunch')
     all_dinner_macros = get_macros_by_meal_type('Dinner')
     all_snack_macros = get_macros_by_meal_type('Snack')
-    print("Snack:", all_snack_macros)
 
+    
 
+    # Calculate totals for each meal type
+    total_breakfast_calories = sum([macro['caloriesconsumed'] for macro in all_breakfast_macros])
+    total_breakfast_protein = sum([macro['proteinconsumed'] for macro in all_breakfast_macros])
+    total_breakfast_carbs = sum([macro['carbsconsumed'] for macro in all_breakfast_macros])
+    total_breakfast_fats = sum([macro['fatsconsumed'] for macro in all_breakfast_macros])
 
+    total_lunch_calories = sum([macro['caloriesconsumed'] for macro in all_lunch_macros])
+    total_lunch_protein = sum([macro['proteinconsumed'] for macro in all_lunch_macros])
+    total_lunch_carbs = sum([macro['carbsconsumed'] for macro in all_lunch_macros])
+    total_lunch_fats = sum([macro['fatsconsumed'] for macro in all_lunch_macros])
+
+    total_dinner_calories = sum([macro['caloriesconsumed'] for macro in all_dinner_macros])
+    total_dinner_protein = sum([macro['proteinconsumed'] for macro in all_dinner_macros])
+    total_dinner_carbs = sum([macro['carbsconsumed'] for macro in all_dinner_macros])
+    total_dinner_fats = sum([macro['fatsconsumed'] for macro in all_dinner_macros])
+
+    total_snack_calories = sum([macro['caloriesconsumed'] for macro in all_snack_macros])
+    total_snack_protein = sum([macro['proteinconsumed'] for macro in all_snack_macros])
+    total_snack_carbs = sum([macro['carbsconsumed'] for macro in all_snack_macros])
+    total_snack_fats = sum([macro['fatsconsumed'] for macro in all_snack_macros])
+
+    # Collect totals for the day
+    total_calories = (total_breakfast_calories + total_lunch_calories +
+                          total_dinner_calories + total_snack_calories)
+    total_protein = (total_breakfast_protein + total_lunch_protein +
+                         total_dinner_protein + total_snack_protein)
+    total_carbs = (total_breakfast_carbs + total_lunch_carbs +
+                       total_dinner_carbs + total_snack_carbs)
+    total_fats = (total_breakfast_fats + total_lunch_fats +
+                      total_dinner_fats + total_snack_fats)
+  
     return render_template('macrotracker.html',
-                           all_breakfast_macros=all_breakfast_macros,
-                           all_lunch_macros=all_lunch_macros,
-                           all_dinner_macros=all_dinner_macros,
-                           all_snack_macros=all_snack_macros)
+                       all_breakfast_macros=all_breakfast_macros,
+                       all_lunch_macros=all_lunch_macros,
+                       all_dinner_macros=all_dinner_macros,
+                           all_snack_macros=all_snack_macros,total_breakfast_calories=total_breakfast_calories,
+                           total_breakfast_protein=total_breakfast_protein,
+                           total_breakfast_carbs=total_breakfast_carbs,
+                           total_breakfast_fats=total_breakfast_fats,
+                           total_lunch_calories=total_lunch_calories,
+                           total_lunch_protein=total_lunch_protein,
+                           total_lunch_carbs=total_lunch_carbs,
+                           total_lunch_fats=total_lunch_fats,
+                           total_dinner_calories=total_dinner_calories,
+                           total_dinner_protein=total_dinner_protein,
+                           total_dinner_carbs=total_dinner_carbs,
+                           total_dinner_fats=total_dinner_fats,
+                           total_snack_calories=total_snack_calories,
+                           total_snack_protein=total_snack_protein,
+                           total_snack_carbs=total_snack_carbs,
+                           total_snack_fats=total_snack_fats,
+                           total_calories=total_calories,total_protein=total_protein,total_fats=total_fats,total_carbs=total_carbs)
+
     
 
 @app.get('/forum')

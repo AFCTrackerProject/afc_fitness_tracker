@@ -15,7 +15,7 @@
             position: relative; 
         }
         .slider img {
-            width: 100%; 
+            width: 0%; 
             height: auto;
             object-fit: cover;
         }
@@ -114,6 +114,32 @@
             padding: 20px;
             color: #fff; 
         }
+        /* CSS for Total Section */
+        .total-section {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center; /* Center align the content */
+        }
+        .total-section h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        .total-section ul {
+            list-style-type: none;
+            padding: 0;
+            display: flex; /* Display the list items in a row */
+            justify-content: center; /* Center align the list items */
+        }
+        .total-section ul li {
+            margin: 0 10px; /* Add some margin between each list item */
+        }
+        .total-section ul li strong {
+            font-weight: bold;
+            margin-right: 5px;
+        }
     </style>
     <script>
         $(document).ready(function() {
@@ -139,10 +165,10 @@
         </div>
         <div class="text-center mb-8">
             <!-- Example macro goals and intake values, replace with dynamic data -->
-            <p><strong>Calories:</strong> 500/2000 cal (25%)</p>
-            <p><strong>Protein:</strong> 30/150g</p>
-            <p><strong>Carbs:</strong> 45/300g</p>
-            <p><strong>Fats:</strong> 10/70g</p>
+            <p><strong>Calories: {{ total_calories }} </strong>/2000 cal</p>
+            <p><strong>Protein: {{ total_protein }}</strong>/150g</p>
+            <p><strong>Carbs: {{ total_carbs }}</strong>/300g</p>
+            <p><strong>Fats: {{ total_fats }}</strong>/70g</p>
         </div>
 
         <!-- Slider container -->
@@ -290,8 +316,6 @@
         </div>
     </div>
     
-    <p>{{ all_snacks_macros }}</p>
-
     <!-- Log Table -->
     <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
         <h2 class="text-2xl font-bold mb-4">Breakfast Log</h2>
@@ -319,8 +343,17 @@
             </tbody>
         </table>
         {% else %}
-        <p>No data available.</p>
+        <p>No data available. Add a food item above.</p>
         {% endif %}
+    </div>
+    <div class="total-section">
+        <h3>Breakfast Totals</h3>
+        <ul>
+            <li><strong>Total Calories:</strong> {{ total_breakfast_calories }}</li>
+            <li><strong>Total Protein:</strong> {{ total_breakfast_protein }}</li>
+            <li><strong>Total Carbs:</strong> {{ total_breakfast_carbs }}</li>
+            <li><strong>Total Fats:</strong> {{ total_breakfast_fats }}</li>
+        </ul>
     </div>
     <!-- Log Table -->
     <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
@@ -349,8 +382,17 @@
             </tbody>
         </table>
         {% else %}
-        <p>No data available.</p>
+        <p>No data available. Add a food item above.</p>
         {% endif %}
+    </div>
+    <div class="total-section">
+        <h3>Lunch Totals</h3>
+        <ul>
+            <li><strong>Total Calories:</strong> {{ total_lunch_calories }}</li>
+            <li><strong>Total Protein:</strong> {{ total_lunch_protein }}</li>
+            <li><strong>Total Carbs:</strong> {{ total_lunch_carbs }}</li>
+            <li><strong>Total Fats:</strong> {{ total_lunch_fats }}</li>
+        </ul>
     </div>
     <!-- Log Table -->
 <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
@@ -379,8 +421,17 @@
         </tbody>
     </table>
     {% else %}
-    <p>No data available.</p>
+    <p>No data available. Add a food item above.</p>
     {% endif %}
+</div>
+<div class="total-section">
+    <h3>Dinner Totals</h3>
+    <ul>
+        <li><strong>Total Calories:</strong> {{ total_dinner_calories }}</li>
+        <li><strong>Total Protein:</strong> {{ total_dinner_protein }}</li>
+        <li><strong>Total Carbs:</strong> {{ total_dinner_carbs }}</li>
+        <li><strong>Total Fats:</strong> {{ total_dinner_fats }}</li>
+    </ul>
 </div>
 <!-- Snacks Log -->
 <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
@@ -409,8 +460,17 @@
         </tbody>
     </table>
     {% else %}
-    <p>No data available.</p>
+    <p>No data available. Add a food item above.</p>
     {% endif %}
+</div>
+<div class="total-section">
+    <h3>Snack Totals</h3>
+    <ul>
+        <li><strong>Total Calories:</strong> {{ total_snack_calories }}</li>
+        <li><strong>Total Protein:</strong> {{ total_snack_protein }}</li>
+        <li><strong>Total Carbs:</strong> {{ total_snack_carbs }}</li>
+        <li><strong>Total Fats:</strong> {{ total_snack_fats }}</li>
+    </ul>
 </div>
 
 {% endblock %}
