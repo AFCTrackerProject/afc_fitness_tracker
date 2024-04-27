@@ -22,9 +22,9 @@ load_dotenv()
 
 app = Flask(__name__)
 mail = Mail(app)
-sg = SendGridAPIClient('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')
+sg = SendGridAPIClient(os.getenv('SGKEY'))
 
-#client = Client("AC161778585efa22dcefe081d5e2acad18", "18af9e39df56d130357291370ac3d1c2")
+#client = Client("str", "str")
 
 
 # Amazon SES SMTP configuration
@@ -42,7 +42,7 @@ app.config['MAIL_SERVER'] = 'smtp.sendgrid.net'  # SMTP server for SendGrid
 app.config['MAIL_PORT'] = 587  # Port for TLS connections
 app.config['MAIL_USE_TLS'] = True  # Enable TLS encryption
 app.config['MAIL_USERNAME'] = 'apikey'  # SendGrid username
-app.config['MAIL_PASSWORD'] = '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'  # SendGrid API key as password
+app.config['MAIL_PASSWORD'] = os.getenv('SGKEY')  # SendGrid API key as password
 app.config['MAIL_DEFAULT_SENDER'] = 'camcope247@gmail.com'  # Your verified sender email address
 
 # Initialize Flask-Mail
