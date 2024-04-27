@@ -77,34 +77,40 @@ def submit_question(username: str, weight: float, height: float, gender: str, da
 def get_user_by_id(userid: int) -> dict[str, Any] | None:
     pool = get_pool()
     with pool.connection() as conn:
-            with conn.cursor(row_factory=dict_row) as cur:
-                cur.execute("""
-                            SELECT
-                                firstname,
-                                lastname,
-                                userid,
-                                username,
-                                email,
-                                dateofbirth,
-                                gender,
-                                height,
-                                weight
-                            FROM
-                                users
-                            WHERE userid = %s
-                            """,[userid])
-                user = cur.fetchone()
-                return user
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute("""
+                SELECT
+                    firstname,
+                    lastname,
+                    userid,
+                    username,
+                    email,
+                    dateofbirth,
+                    gender,
+                    height,
+                    weight,
+                    profilepicture  -- Include profilepicture column
+                FROM
+                    users
+                WHERE userid = %s
+            """, [userid])
+            user = cur.fetchone()
+            return user
 
-def update_user_profile(userid: int, email: str, dateofbirth: str, gender: str, height: int, weight: int, profilepicture: bytes) -> bool:
+
+def update_user_profile(userid: int, email: str, dateofbirth: str, gender: str, height: int, weight: int, profilepicture: str) -> bool:
     pool = get_pool()
     with pool.connection() as conn:
-            with conn.cursor() as cur:
+        with conn.cursor() as cur:
+            try:
                 cur.execute("""
                     UPDATE users
-                    SET email = %s, dateofbirth = %s, gender = %s, height = %s, weight = %s, ProfilePicture = %s
+                    SET email = %s, dateofbirth = %s, gender = %s, height = %s, weight = %s, profilepicture = %s
                     WHERE userid = %s
                 """, (email, dateofbirth, gender, height, weight, profilepicture, userid))
-                conn.commit()   
-
+                conn.commit()
                 return cur.rowcount > 0  # Check if the update was successful
+            except Exception as e:
+                print(f"Error updating user profile: {e}")
+                return False
+

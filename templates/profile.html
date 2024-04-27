@@ -16,11 +16,7 @@
         
         <!-- Avatar Placeholder -->
         <div class="w-32 h-32 bg-gray-300 rounded-full mb-4 overflow-hidden">
-            {% if user.profilepicture %}
-                <img src="{{ user.profilepicture }}" alt="Profile Picture" class="w-full h-full object-cover">
-            {% else %}
-                <img src="https://upload.wikimedia.org/wikipedia/en/2/2f/Morbius_%28film%29_poster.jpg" alt="Default Avatar" class="w-full h-full object-cover">
-            {% endif %}
+            <img src="{{ user.get('profilepicture') }}" alt="Profile Picture" class="w-full h-full object-cover">
         </div>
         
         <h1 class="text-2xl font-bold text-center">{{ user.firstname }} {{ user.lastname }}</h1>
@@ -31,8 +27,6 @@
             <p><strong>Gender:</strong> {{ user.gender }}</p>
             <p><strong>Height:</strong> {{ user.height }} cm</p>
             <p><strong>Weight:</strong> {{ user.weight }} lbs</p>
-            <p><strong>Favorite workout:</strong> Deadlifts</p>
-            <p><strong>Favorite drink:</strong> Blood Protein Shakes</p>
         </div>
         <div class="mt-6">
             <a href="{{ url_for('updateprofile') }}" class="text-blue-600 hover:underline">Update Profile</a>
@@ -40,4 +34,3 @@
     </div>
 </div>
 {% endblock %}
-

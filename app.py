@@ -5,6 +5,9 @@ from database import fitness_repo
 from flask_bcrypt import Bcrypt
 import googlemaps
 import openai
+from botocore.exceptions import NoCredentialsError
+from werkzeug.utils import secure_filename
+import boto3
 import requests 
 from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros, save_target
 
@@ -17,6 +20,14 @@ app.secret_key = os.getenv('APP_SECRET_KEY')
 api_key = os.getenv('GMAPS_API_KEY')
 openai.api_key = os.getenv('OPENAI_API_KEY')
 #openai.api_key = 'sk-proj-cnWNuIs8QKyamOPfaS6ST3BlbkFJJlzrYZgmbd1y3VtwXPi0'
+
+s3_access_key = os.getenv('S3_ACCESS_KEY')
+s3_secret_key = os.getenv('S3_SECRET_KEY')
+s3_bucket_name = os.getenv('S3_BUCKET_NAME')
+
+s3 = boto3.client('s3',
+                  aws_access_key_id=s3_access_key,
+                  aws_secret_access_key=s3_secret_key)
 
 
 gmaps = googlemaps.Client(key=api_key)
@@ -280,6 +291,8 @@ def profile():
         return redirect('/login')
     userid = session.get('userid')
     user = fitness_repo.get_user_by_id(userid)
+    print(user.get('weight'))
+    print(user.get('profilepicture'))
     return render_template('profile.html', user=user)
 
 @app.route('/finder.html')
@@ -425,13 +438,12 @@ def handle_question_submission():
 
     return redirect(url_for('profile'))
 
-# Update the user's profile picture field in the database
-@app.route('/updateprofile', methods=['POST', 'GET'])
+@app.route('/updateprofile', methods=['GET', 'POST'])
 def updateprofile():
     if 'userid' not in session:
         flash('You need to log in to update your profile.', 'error')
         return redirect('/login')
-
+    
     if request.method == 'POST':
         # Retrieve form data
         email = request.form.get('email')
@@ -439,33 +451,40 @@ def updateprofile():
         gender = request.form.get('gender')
         height = request.form.get('height')
         weight = request.form.get('weight')
+        profile_picture = request.files['profilepicture']
 
-        # Handle profile picture upload
-        profile_picture = request.files.get('profilepicture')
-        profile_picture_data = None  # Placeholder for profile picture data
-
+        # Validate profile picture
         if profile_picture:
-            # Read the profile picture data
-            profile_picture_data = profile_picture.read()
+            # Secure filename to prevent directory traversal
+            filename = secure_filename(profile_picture.filename)
+            try:
+                # Upload profile picture to S3 bucket
+                s3.upload_fileobj(profile_picture, s3_bucket_name, filename)
+                # Get S3 URL for uploaded profile picture
+                profile_picture_url = f"https://{s3_bucket_name}.s3.amazonaws.com/{filename}"
+                
+                # Update user profile in the database with the S3 URL
+                success = fitness_repo.update_user_profile(
+                    userid=session['userid'],
+                    email=email,
+                    dateofbirth=dateofbirth,
+                    gender=gender,
+                    height=height,
+                    weight=weight,
+                    profilepicture=profile_picture_url  # Pass S3 URL to function
+                )
 
-        # Update user profile in the database
-        success = fitness_repo.update_user_profile(
-            userid=session['userid'],
-            email=email,
-            dateofbirth=dateofbirth,
-            gender=gender,
-            height=height,
-            weight=weight,
-            profilepicture=profile_picture_data  # Pass profile picture data to function
-        )
+                if success:
+                    flash('Profile updated successfully!', 'success')
+                else:
+                    flash('Failed to update profile. Please try again.', 'error')
 
-        if success:
-            flash('Profile updated successfully!', 'success')
-        else:
-            flash('Failed to update profile. Please try again.', 'error')
+            except NoCredentialsError:
+                flash('AWS credentials not available. Profile picture upload failed.', 'error')
 
-    # If it's a GET request (initial load or refresh), render the updateprofile.html template
+    # Fetch user data for rendering the profile page
     user = fitness_repo.get_user_by_id(session['userid'])
+    #print(user.profilepicture)
     return render_template('updateprofile.html', user=user)
 
 
