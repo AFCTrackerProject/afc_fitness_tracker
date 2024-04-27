@@ -2,19 +2,52 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, abort, flash, get_flashed_messages, jsonify, session
 from dotenv import load_dotenv
 from database import fitness_repo
+from database.fitness_repo import get_confirmation_token, verify_confirmation_token, get_user_by_id
 from flask_bcrypt import Bcrypt
 import googlemaps
 import openai
 from botocore.exceptions import NoCredentialsError
+from flask_mail import Mail, Message
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+from twilio.rest import Client
 from werkzeug.utils import secure_filename
 import boto3
 import requests 
+import secrets
 from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros, save_target
 
 
 load_dotenv()
 
 app = Flask(__name__)
+mail = Mail(app)
+sg = SendGridAPIClient('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')
+
+#client = Client("AC161778585efa22dcefe081d5e2acad18", "18af9e39df56d130357291370ac3d1c2")
+
+
+# Amazon SES SMTP configuration
+'''
+app.config['MAIL_SERVER'] = 'email-smtp.us-east-1.amazonaws.com'  # Replace <region> with your AWS region, e.g., 'us-west-2'
+app.config['MAIL_PORT'] = 465  # Use 465 for SSL/TLS or 587 for STARTTLS
+app.config['MAIL_USE_SSL'] = True  # Set to True if using SSL/TLS
+app.config['MAIL_USE_TLS'] = False  # Set to False if using SSL/TLS
+app.config['MAIL_USERNAME'] = 'AKIAYS2NRIK4A6SRWMHW'  # SMTP username generated in the previous step
+app.config['MAIL_PASSWORD'] = 'BDaeEdgCboEir98hOfE5wsNiQlqShsuvs9FD1d7tty1Z'  # SMTP password generated in the previous step
+app.config['MAIL_DEFAULT_SENDER'] = 'camcope247@gmail.com'  # Replace with your verified email address
+'''
+
+app.config['MAIL_SERVER'] = 'smtp.sendgrid.net'  # SMTP server for SendGrid
+app.config['MAIL_PORT'] = 587  # Port for TLS connections
+app.config['MAIL_USE_TLS'] = True  # Enable TLS encryption
+app.config['MAIL_USERNAME'] = 'apikey'  # SendGrid username
+app.config['MAIL_PASSWORD'] = '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'  # SendGrid API key as password
+app.config['MAIL_DEFAULT_SENDER'] = 'camcope247@gmail.com'  # Your verified sender email address
+
+# Initialize Flask-Mail
+mail = Mail(app)
+ses_client = boto3.client('ses', region_name='us-east-1')
 
 app.secret_key = os.getenv('APP_SECRET_KEY')
 api_key = os.getenv('GMAPS_API_KEY')
@@ -212,7 +245,8 @@ def signup():
         username = request.form.get('username')
         password = request.form.get('password')
         confirmpassword = request.form.get('confirmpassword')
-
+        confirmation_token = get_confirmation_token(email)  # Pass email to get_confirmation_token
+        
         # Check that username and password are not empty
         if not username or not password:
             flash('Username/password cannot be empty', 'error')
@@ -227,12 +261,182 @@ def signup():
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
         # Executes the SQL code and flashes a message to indicate it was successful
-        if fitness_repo.create_user(firstname, lastname, email, username, hashed_password):
+        if fitness_repo.create_user(firstname, lastname, email, username, hashed_password, confirmation_token):
             flash('User account successfully created!', 'info')
-            return render_template('signup.html', show_popup=True)
+            
+            # Retrieve the newly created user's details and set session user ID
+            user = fitness_repo.get_user_by_username(username)
+            session['userid'] = user['userid']
+
+            # Send confirmation email to the user
+            send_confirmation_email(email, firstname)
+
+        # Render the verification page with user's email
+        return render_template('verification.html', user_email=email)
 
     # Render the signup form template for GET requests
     return render_template('signup.html')
+
+
+
+
+def send_confirmation_email(email, firstname):
+    # Create a message object
+   # msg = Message('Welcome to Our Website', sender='camcope247@gmail.com', recipients=[email])
+    
+    # Set the email body
+    #msg.body = f"Dear {firstname},\n\nThank you for signing up on our website!\n\nBest Regards,\nThe AFC Fitness Team"
+    
+    # Send the email
+    #mail.send(msg)
+
+    confirmation_token = get_confirmation_token(email)
+
+    message = Mail(
+        from_email='camcope247@gmail.com',  
+        to_emails=email,
+        subject='Welcome to AFC Fitness!',
+        html_content = f"""
+    <html>
+    <head>
+        <style>
+            
+            body {{
+                font-family: Arial, sans-serif;
+            }}
+            .container {{
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f9f9f9;
+                border-radius: 5px;
+            }}
+            .header {{
+                text-align: center;
+                margin-bottom: 20px;
+            }}
+            .confirmation-code {{
+                font-weight: bold;
+            }}
+            .footer {{
+                margin-top: 20px;
+                text-align: center;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h2>Dear {firstname},</h2>
+                <p>Thank you for signing up on our website!</p>
+            </div>
+            <div>
+                <p>Your confirmation code is: <span class="confirmation-code">{confirmation_token}</span></p>
+            </div>
+            <div class="footer">
+                <p>Best Regards,<br>The AFC Fitness Team</p>
+            </div>
+        </div>
+    </body>
+    </html>
+"""
+
+    )
+
+    try:
+        # Send the email using the SendGrid API
+        response = sg.send(message)
+        print(response.status_code)
+        print(response.body)
+        print(response.headers)
+    except Exception as e:
+        print(str(e))
+
+@app.route('/verify_token', methods=['POST'])
+def verify_token():
+    # Get user ID from session
+   
+    user_id = session.get('userid')
+    if not user_id:
+        return redirect(url_for('login'))  # Redirect to login page if user ID not found in session
+    
+    # Fetch user from the database based on user ID
+    user = fitness_repo.get_user_by_id(user_id)
+    print(user.get('email'))
+    print(user.get('email'))
+    if not user:
+        return "User not found"  # Handle case where user is not found in the database
+    
+    # Check if the request method is POST
+    if request.method == 'POST':
+        token_entered = request.form['token']
+        if verify_confirmation_token(user['email'], token_entered):
+            # If the token matches, render the profile page
+            return render_template('profile.html', user=user)
+        else:
+            # If the token doesn't match, render an error message or redirect back to the form
+            return "Invalid token. Please try again."
+
+    # Render the verification form template with the user object
+    return render_template('verification.html', user=user)
+
+@app.route('/verification_form')
+def verification_form():
+    # Check if user ID is in session
+    if 'userid' not in session:
+        flash('You need to log in to see your profile.', 'error')
+        return redirect('/login')
+    
+    # Get user ID from session
+    userid = session.get('userid')
+    
+    # Fetch user from the database based on user ID
+    user = fitness_repo.get_user_by_id(userid)
+    
+    # Check if user exists
+    if not user:
+        return "User not found"  # Handle case where user is not found in the database
+    
+    # Render the verification form template with the user object
+    return render_template('verification.html', user=user)
+
+
+'''
+@app.route('/verify_phone', methods=['GET', 'POST'])
+def verify_phone():
+    if request.method == 'POST':
+        # Retrieve the phone number and verification code from the form
+        #phone_number = request.form.get('phone_number')
+        print(phone_number)
+        verification_code = request.form.get('verification_code')
+        
+        # Verify the phone number and code (you should implement this logic using Twilio)
+        if verify_phone_number(phone_number, verification_code):
+            flash('Phone number verified successfully!', 'success')
+            # Redirect to profile page upon successful verification
+            return redirect(url_for('profile'))
+        else:
+            flash('Phone number verification failed. Please try again.', 'error')
+            return render_template('verification.html')
+
+    # Render the verification page for GET requests
+    return render_template('verification.html')
+
+def verify_phone_number(phone_number, verification_code):
+    try:
+        verification_check = client.verify.services('VA11676748fbdd2f113ed0bab0b96f1cc5') \
+            .verification_checks \
+            .create(to=phone_number, code=verification_code)
+
+        # Check if the verification check was successful
+        if verification_check.status == 'approved':
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(f"Error verifying phone number: {e}")
+        return False
+'''
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -281,8 +485,9 @@ def login():
 @app.post('/logout')
 def logout():
     session.pop('userid', None)
-    return redirect('/')
     flash('You have been logged out.','info')
+    return redirect('/')
+    
 
 @app.get('/profile')
 def profile():
@@ -378,6 +583,7 @@ def chatbot():
 
 # Route to handle user input and get bot response
 @app.route('/chatbot', methods=['POST'])
+
 def handle_message():
     data = request.get_json()
     message = data['message']

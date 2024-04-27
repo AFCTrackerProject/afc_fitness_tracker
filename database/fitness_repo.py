@@ -2,7 +2,11 @@ from database.db import get_pool
 from typing import Any
 from psycopg.rows import dict_row
 from flask import flash
+import secrets
+import string
 
+def generate_confirmation_token():
+    return ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
 
 def does_username_exist(username: str) -> bool:
     pool = get_pool()
@@ -18,14 +22,15 @@ def does_username_exist(username: str) -> bool:
             user_id = cur.fetchone()
             return user_id is not None
         
-def create_user(firstname: str, lastname: str, email: str, username: str, password: str) -> dict:
+def create_user(firstname: str, lastname: str, email: str, username: str, password: str, confirmation_token: str) -> dict:
     pool = get_pool()
+    confirmation_token = generate_confirmation_token()  # Generate confirmation token
     with pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO users (firstname, lastname, email, username, password)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (firstname, lastname, email, username, password))
+                INSERT INTO users (firstname, lastname, email, username, password, confirmation_token)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (firstname, lastname, email, username, password, confirmation_token))  # Include confirmation_token in the INSERT statement
             conn.commit()  
 
     # Optionally return user data or a success message
@@ -89,7 +94,8 @@ def get_user_by_id(userid: int) -> dict[str, Any] | None:
                     gender,
                     height,
                     weight,
-                    profilepicture  -- Include profilepicture column
+                    profilepicture,
+                    confirmation_token
                 FROM
                     users
                 WHERE userid = %s
@@ -113,4 +119,34 @@ def update_user_profile(userid: int, email: str, dateofbirth: str, gender: str, 
             except Exception as e:
                 print(f"Error updating user profile: {e}")
                 return False
+
+def verify_confirmation_token(email: str, token_entered: str) -> bool:
+    pool = get_pool()
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT confirmation_token
+                FROM users
+                WHERE email = %s
+            """, [email])
+            result = cur.fetchone()
+            if result and result[0] == token_entered:
+                return True
+            else:
+                return False
+            
+def get_confirmation_token(email: str) -> str:
+    pool = get_pool()
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT confirmation_token
+                FROM users
+                WHERE email = %s
+            """, [email])
+            result = cur.fetchone()
+            if result:
+                return result[0]  # Return the confirmation token
+            else:
+                return None  # If no confirmation token found for the email
 
