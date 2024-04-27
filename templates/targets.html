@@ -1,0 +1,37 @@
+{% extends "_layout.html" %}
+
+{% block content %}
+
+<body>
+    <div class="container">
+        <br>
+        <h1 style="text-align: center; color: #333;">Targets</h1>
+        <p style="text-align: center; color: #666;">You can set/update your macros here.</p>
+        <br>
+        <form action="{{ url_for('save_targets') }}" method="POST" style="max-width: 400px; margin: 0 auto;">
+            <div style="margin-bottom: 15px;">
+                <label for="target_calories" style="display: block; margin-bottom: 5px;">Target Calories:</label>
+                <input type="number" id="target_calories" name="target_caloriesconsumed" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label for="target_protein" style="display: block; margin-bottom: 5px;">Target Protein (g):</label>
+                <input type="number" id="target_protein" name="target_proteinconsumed" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label for="target_carbs" style="display: block; margin-bottom: 5px;">Target Carbs (g):</label>
+                <input type="number" id="target_carbs" name="target_carbsconsumed" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label for="target_fats" style="display: block; margin-bottom: 5px;">Target Fats (g):</label>
+                <input type="number" id="target_fats" name="target_fatsconsumed" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+            </div>
+
+            <button type="submit" style="width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">Save Targets</button>
+        </form>
+    </div>
+</body>
+
+{% endblock %}
