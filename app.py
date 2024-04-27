@@ -5,8 +5,11 @@ from database import fitness_repo
 from flask_bcrypt import Bcrypt
 import googlemaps
 import openai
+from botocore.exceptions import NoCredentialsError
+from werkzeug.utils import secure_filename
+import boto3
 import requests 
-from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros
+from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros, save_target
 
 
 load_dotenv()
@@ -17,6 +20,14 @@ app.secret_key = os.getenv('APP_SECRET_KEY')
 api_key = os.getenv('GMAPS_API_KEY')
 openai.api_key = os.getenv('OPENAI_API_KEY')
 #openai.api_key = 'sk-proj-cnWNuIs8QKyamOPfaS6ST3BlbkFJJlzrYZgmbd1y3VtwXPi0'
+
+s3_access_key = os.getenv('S3_ACCESS_KEY')
+s3_secret_key = os.getenv('S3_SECRET_KEY')
+s3_bucket_name = os.getenv('S3_BUCKET_NAME')
+
+s3 = boto3.client('s3',
+                  aws_access_key_id=s3_access_key,
+                  aws_secret_access_key=s3_secret_key)
 
 
 gmaps = googlemaps.Client(key=api_key)
@@ -49,6 +60,17 @@ def macrotracker():
         flash('You need to log in to use the macrotracker.', 'error')
         return redirect('/login')
 
+    userid = session['userid']
+    targets = session.get(f'targets_{userid}', None)
+
+    """
+    target_caloriesconsumed = session.get('target_caloriesconsumed', None)
+    target_proteinconsumed = session.get('target_proteinconsumed', None)
+    target_carbsconsumed = session.get('target_carbsconsumed', None)
+    target_fatsconsumed = session.get('target_fatsconsumed', None)
+    """
+    
+
     if request.method == 'POST':
         # Retrieve form data
         meal_type = request.form.get('meal_type') 
@@ -57,27 +79,111 @@ def macrotracker():
         proteinconsumed = request.form.get(f'protein_{meal_type.lower()}')
         carbsconsumed = request.form.get(f'carbs_{meal_type.lower()}')
         fatsconsumed = request.form.get(f'fat_{meal_type.lower()}')
+        quantity = request.form.get(f'quantity_{meal_type.lower()}')
+
+        # Convert quantities to floats for multiplication
+        caloriesconsumed = float(caloriesconsumed) * float(quantity)
+        proteinconsumed = float(proteinconsumed) * float(quantity)
+        carbsconsumed = float(carbsconsumed) * float(quantity)
+        fatsconsumed = float(fatsconsumed) * float(quantity)
 
         # Call create_macros function to add a new entry
-        if create_macros(name, caloriesconsumed, proteinconsumed, carbsconsumed, fatsconsumed, meal_type):
+        if create_macros(userid, name, caloriesconsumed, proteinconsumed, carbsconsumed, fatsconsumed, meal_type):
             print("Insertion successful") # PROVES MACRO CREATION IS SUCCESSFUL
         else:
             print("Insertion failed")
+            
 
     # Fetch all macros for display based on meal type
     all_breakfast_macros = get_macros_by_meal_type('Breakfast')
     all_lunch_macros = get_macros_by_meal_type('Lunch')
     all_dinner_macros = get_macros_by_meal_type('Dinner')
     all_snack_macros = get_macros_by_meal_type('Snack')
-    print("Snack:", all_snack_macros)
 
+    
 
+    # Calculate totals for each meal type
+    total_breakfast_calories = sum([macro['caloriesconsumed'] for macro in all_breakfast_macros])
+    total_breakfast_protein = sum([macro['proteinconsumed'] for macro in all_breakfast_macros])
+    total_breakfast_carbs = sum([macro['carbsconsumed'] for macro in all_breakfast_macros])
+    total_breakfast_fats = sum([macro['fatsconsumed'] for macro in all_breakfast_macros])
 
+    total_lunch_calories = sum([macro['caloriesconsumed'] for macro in all_lunch_macros])
+    total_lunch_protein = sum([macro['proteinconsumed'] for macro in all_lunch_macros])
+    total_lunch_carbs = sum([macro['carbsconsumed'] for macro in all_lunch_macros])
+    total_lunch_fats = sum([macro['fatsconsumed'] for macro in all_lunch_macros])
+
+    total_dinner_calories = sum([macro['caloriesconsumed'] for macro in all_dinner_macros])
+    total_dinner_protein = sum([macro['proteinconsumed'] for macro in all_dinner_macros])
+    total_dinner_carbs = sum([macro['carbsconsumed'] for macro in all_dinner_macros])
+    total_dinner_fats = sum([macro['fatsconsumed'] for macro in all_dinner_macros])
+
+    total_snack_calories = sum([macro['caloriesconsumed'] for macro in all_snack_macros])
+    total_snack_protein = sum([macro['proteinconsumed'] for macro in all_snack_macros])
+    total_snack_carbs = sum([macro['carbsconsumed'] for macro in all_snack_macros])
+    total_snack_fats = sum([macro['fatsconsumed'] for macro in all_snack_macros])
+
+    # Collect totals for the day
+    total_calories = (total_breakfast_calories + total_lunch_calories +
+                          total_dinner_calories + total_snack_calories)
+    total_protein = (total_breakfast_protein + total_lunch_protein +
+                         total_dinner_protein + total_snack_protein)
+    total_carbs = (total_breakfast_carbs + total_lunch_carbs +
+                       total_dinner_carbs + total_snack_carbs)
+    total_fats = (total_breakfast_fats + total_lunch_fats +
+                      total_dinner_fats + total_snack_fats)
+      
     return render_template('macrotracker.html',
-                           all_breakfast_macros=all_breakfast_macros,
-                           all_lunch_macros=all_lunch_macros,
-                           all_dinner_macros=all_dinner_macros,
-                           all_snack_macros=all_snack_macros)
+                       all_breakfast_macros=all_breakfast_macros,
+                       all_lunch_macros=all_lunch_macros,
+                       all_dinner_macros=all_dinner_macros,
+                           all_snack_macros=all_snack_macros,total_breakfast_calories=total_breakfast_calories,
+                           total_breakfast_protein=total_breakfast_protein,
+                           total_breakfast_carbs=total_breakfast_carbs,
+                           total_breakfast_fats=total_breakfast_fats,
+                           total_lunch_calories=total_lunch_calories,
+                           total_lunch_protein=total_lunch_protein,
+                           total_lunch_carbs=total_lunch_carbs,
+                           total_lunch_fats=total_lunch_fats,
+                           total_dinner_calories=total_dinner_calories,
+                           total_dinner_protein=total_dinner_protein,
+                           total_dinner_carbs=total_dinner_carbs,
+                           total_dinner_fats=total_dinner_fats,
+                           total_snack_calories=total_snack_calories,
+                           total_snack_protein=total_snack_protein,
+                           total_snack_carbs=total_snack_carbs,
+                           total_snack_fats=total_snack_fats,
+                           total_calories=total_calories,total_protein=total_protein,total_fats=total_fats,total_carbs=total_carbs, targets=targets)
+
+# Define the route for the Targets page
+@app.route('/targets', methods=['GET', 'POST'])
+def save_targets():
+    if 'userid' not in session:
+        flash('You need to log in to set a target.', 'error')
+        return redirect('/login')
+    
+    userid = session['userid']
+
+    if request.method == 'POST':
+        # Retrieve form data
+        target_caloriesconsumed = request.form.get('target_caloriesconsumed')
+        target_proteinconsumed = request.form.get('target_proteinconsumed')
+        target_carbsconsumed = request.form.get('target_carbsconsumed')
+        target_fatsconsumed = request.form.get('target_fatsconsumed')
+
+        session[f'targets_{userid}'] = {
+            'calories': target_caloriesconsumed,
+            'protein': target_proteinconsumed,
+            'carbs': target_carbsconsumed,
+            'fats': target_fatsconsumed
+        }
+
+        # Call save_target function with userid as the first argument
+        save_target(userid, target_caloriesconsumed, target_proteinconsumed, target_carbsconsumed, target_fatsconsumed)
+        return redirect(url_for('macrotracker'))    
+
+    return render_template('targets.html')
+
     
 
 @app.get('/forum')
@@ -185,6 +291,8 @@ def profile():
         return redirect('/login')
     userid = session.get('userid')
     user = fitness_repo.get_user_by_id(userid)
+    print(user.get('weight'))
+    print(user.get('profilepicture'))
     return render_template('profile.html', user=user)
 
 @app.route('/finder.html')
@@ -330,13 +438,12 @@ def handle_question_submission():
 
     return redirect(url_for('profile'))
 
-# Update the user's profile picture field in the database
-@app.route('/updateprofile', methods=['POST', 'GET'])
+@app.route('/updateprofile', methods=['GET', 'POST'])
 def updateprofile():
     if 'userid' not in session:
         flash('You need to log in to update your profile.', 'error')
         return redirect('/login')
-
+    
     if request.method == 'POST':
         # Retrieve form data
         email = request.form.get('email')
@@ -344,37 +451,41 @@ def updateprofile():
         gender = request.form.get('gender')
         height = request.form.get('height')
         weight = request.form.get('weight')
+        profile_picture = request.files['profilepicture']
 
-        # Handle profile picture upload
-        profile_picture = request.files.get('profilepicture')
-        profile_picture_data = None  # Placeholder for profile picture data
-
+        # Validate profile picture
         if profile_picture:
-            # Read the profile picture data
-            profile_picture_data = profile_picture.read()
+            # Secure filename to prevent directory traversal
+            filename = secure_filename(profile_picture.filename)
+            try:
+                # Upload profile picture to S3 bucket
+                s3.upload_fileobj(profile_picture, s3_bucket_name, filename)
+                # Get S3 URL for uploaded profile picture
+                profile_picture_url = f"https://{s3_bucket_name}.s3.amazonaws.com/{filename}"
+                
+                # Update user profile in the database with the S3 URL
+                success = fitness_repo.update_user_profile(
+                    userid=session['userid'],
+                    email=email,
+                    dateofbirth=dateofbirth,
+                    gender=gender,
+                    height=height,
+                    weight=weight,
+                    profilepicture=profile_picture_url  # Pass S3 URL to function
+                )
 
-        # Update user profile in the database
-        success = fitness_repo.update_user_profile(
-            userid=session['userid'],
-            email=email,
-            dateofbirth=dateofbirth,
-            gender=gender,
-            height=height,
-            weight=weight,
-            profilepicture=profile_picture_data  # Pass profile picture data to function
-        )
+                if success:
+                    flash('Profile updated successfully!', 'success')
+                else:
+                    flash('Failed to update profile. Please try again.', 'error')
 
-        if success:
-            flash('Profile updated successfully!', 'success')
-        else:
-            flash('Failed to update profile. Please try again.', 'error')
+            except NoCredentialsError:
+                flash('AWS credentials not available. Profile picture upload failed.', 'error')
 
-    # If it's a GET request (initial load or refresh), render the updateprofile.html template
+    # Fetch user data for rendering the profile page
     user = fitness_repo.get_user_by_id(session['userid'])
+    #print(user.profilepicture)
     return render_template('updateprofile.html', user=user)
-
-
-
 
 
 @app.context_processor

@@ -36,7 +36,7 @@ CREATE TABLE WorkoutHistory (
     FOREIGN KEY (UserID) REFERENCES Users(UserID)
 );
 
--- Nutrition Log Table
+-- REMOVE: Nutrition Log Table
 CREATE TABLE NutritionLog (
     LogID INT PRIMARY KEY,
     UserID INT,
@@ -47,6 +47,7 @@ CREATE TABLE NutritionLog (
     FOREIGN KEY (UserID) REFERENCES Users(UserID)
 );
 
+
 -- Friends Table
 CREATE TABLE Friends (
     FriendshipID INT PRIMARY KEY,
@@ -56,7 +57,7 @@ CREATE TABLE Friends (
     FOREIGN KEY (UserID2) REFERENCES Users(UserID)
 );
 
--- Messages Table
+-- REMOVE: Messages Table
 CREATE TABLE Messages (
     MessageID INT PRIMARY KEY,
     SenderUserID INT,
