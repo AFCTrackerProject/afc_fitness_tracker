@@ -31,111 +31,163 @@
                 </a>
                 {% endfor %}
             </div>
-            <!-- Container to display the fetched exercise data -->
+            <!-- New div for exercise display and search functionality -->
             <div class="exercise-display mt-4">
-                <!-- Dynamic content will be loaded here -->
+                <!-- Search bar for exercises, initially hidden -->
+                <input type="text" id="exerciseSearchInput" placeholder="Search exercises..."
+                    class="hidden w-full p-2 border border-gray-300 rounded mb-4">
+                <!-- Container where exercises will be displayed -->
+                <div id="exercisesList">
+                    <!-- Dynamic content will be loaded here -->
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-    .exercise-container {
-        margin-bottom: 20px;
-        border: 1px solid #ccc;
-        padding: 15px;
+    /* General styles for the exercise display area */
+    .exercise-display {
+        margin-top: 20px;
     }
+
+    .exercise-container {
+        cursor: pointer;
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+        background-color: #f9f9f9;
+        transition: background-color 0.3s, box-shadow 0.3s;
+    }
+
+    .exercise-container:hover {
+        background-color: #e9e9e9;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .exercise-detail {
+    display: flex;
+    flex-direction: column; /* Stack children vertically */
+    align-items: center; /* Center children horizontally */
+    overflow: hidden;
+    height: 0;
+    transition: height 0.8s ease-in-out, padding 0.8s ease-in-out;
+    padding: 0 10px;
+}
+
+    .exercise-container.active .exercise-detail {
+        padding: 10px;
+    }
+
 
     .exercise-container img {
         max-width: 100%;
         height: auto;
-        margin-bottom: 10px;
     }
 
     .exercise-container h3 {
-        margin-bottom: 5px;
+        margin: 0;
+        color: #333;
+        font-size: 18px;
     }
 
-    .exercise-video {
-        width: 100%;
-        height: 315px;
-        margin-top: 10px;
+    .exercise-container p {
+        color: #666;
+        font-size: 16px;
+        line-height: 1.4;
     }
 </style>
 
 <script>
     // Display || API parameters
     const muscleMap = {
-    "chest": "chest", // Holds 1 value
-    "back": "back", // Holds 1 value
-    "arms": ["lower arms", "upper arms"], // Array holding multiple values
-    "legs": ["lower legs", "upper legs"]  // Array holding multiple values
-};
+        "chest": "chest",
+        "back": "back",
+        "arms": ["lower arms", "upper arms"],
+        "legs": ["lower legs", "upper legs"]
+    };
 
+    function loadExercises(muscle) {
+        const exercisesContainer = document.querySelector('#exercisesList');
+        const searchBar = document.querySelector('#exerciseSearchInput');
+        exercisesContainer.innerHTML = '';  // Clear previous exercises
+        searchBar.classList.remove('hidden');  // Show the search bar
 
-function loadExercises(muscle) {
-    const apiMuscles = muscleMap[muscle.toLowerCase()]; // Retrieves the correct API parameter(s)
-    
-    if (Array.isArray(apiMuscles)) {
-        apiMuscles.forEach(apiMuscle => {
-            fetchExerciseData(apiMuscle); // Handle each muscle part separately
-        });
-    } else {
-        fetchExerciseData(apiMuscles); // Handle single muscle part
-    }
-}
-
-function fetchExerciseData(apiMuscle) {
-    fetch('/exercises/' + apiMuscle)
-    .then(response => {
-        if (response.ok) {
-            return response.json();
+        const apiMuscles = muscleMap[muscle.toLowerCase()];
+        if (Array.isArray(apiMuscles)) {
+            apiMuscles.forEach(apiMuscle => {
+                fetchExerciseData(apiMuscle);
+            });
         } else {
-            throw new Error('Network response was not ok for ' + apiMuscle);
+            fetchExerciseData(apiMuscles);
         }
-    })
-    .then(data => {
-        processExerciseData(apiMuscle, data); // Function to process and display data
-    })
-    .catch(error => {
-        console.error('Error loading exercises for ' + apiMuscle + ':', error);
-        alert('Failed to load exercises for ' + apiMuscle + '. Please check the console for more details.');
-    });
-}
-
-function processExerciseData(muscle, data) {
-    const exercisesContainer = document.querySelector('.exercise-display');
-    exercisesContainer.innerHTML += `<h2 style="font-weight: bold; font-size: 24px;">${muscle.charAt(0).toUpperCase() + muscle.slice(1)} Exercises</h2>`;
-    
-    data.exercises.forEach(exercise => {
-        const titleCasedName = exercise.name.replace(/\w\S*/g, function (txt) {
-            return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); // Capitalizes the first letter of each word
-        });
-
-        const exerciseHtml = `
-            <div class="exercise-container">
-                <img src="${exercise.gifUrl}" alt="${titleCasedName}">
-                <h3><strong>${titleCasedName}</strong></h3>
-                <p>${exercise.instructions || 'No instructions provided.'}</p>
-            </div>
-        `;
-        exercisesContainer.innerHTML += exerciseHtml;
-    });
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-    const btn = document.querySelector(".mobile-menu-button");
-    const menu = document.querySelector(".mobile-menu");
-
-    if (btn && menu) {
-        btn.addEventListener("click", () => {
-            menu.classList.toggle("hidden");
-        });
-    } else {
-        console.error("Menu button or mobile menu not found.");
     }
-});
-</script>
 
+    function fetchExerciseData(apiMuscle) {
+        fetch('/exercises/' + apiMuscle)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);  // Log the data to inspect its structure
+                processExerciseData(apiMuscle, data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+    function processExerciseData(muscle, data) {
+        const exercisesContainer = document.querySelector('#exercisesList');
+        let htmlContent = `<h2 style="text-transform: capitalize; font-size: 24px; font-weight: bold;">${muscle} Exercises</h2>`;
+        data.exercises.forEach(exercise => {
+            // Checks to see if info from the API is being pulled
+            const instructions = exercise.instructions || 'No instructions provided.';
+            const gifUrl = exercise.gifUrl || '/static/images/placeholder.gif';  // Use a placeholder if no GIF is provided
+
+            htmlContent += `
+    <div class="exercise-container">
+        <h3><strong>${toTitleCase(exercise.name)}</strong></h3>
+        <div class="exercise-detail">
+            <img src="${gifUrl}" alt="Exercise GIF" style="display: block; margin-left: auto; margin-right: auto; height: auto; border: 2px solid black; margin-bottom: 20px;">
+            <p>${exercise.instructions || 'No instructions provided.'}</p>
+        </div>
+    </div>
+`;
+
+        });
+        exercisesContainer.innerHTML = htmlContent;
+        setupExerciseContainerToggle(); // Setup functionality for showing and hiding details
+    }
+
+    function toTitleCase(str) {
+        return str.replace(/\w\S*/g, function (txt) {
+            return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        });
+    }
+
+    function setupExerciseContainerToggle() {
+        document.querySelectorAll('.exercise-container').forEach(container => {
+            container.addEventListener('click', function () {
+                const detail = this.querySelector('.exercise-detail');
+                if (detail.style.height && detail.style.height !== '0px') {
+                    detail.style.height = '0px'; // Collapse the panel
+                } else {
+                    detail.style.height = detail.scrollHeight + 'px'; // Expand the panel
+                }
+            });
+        });
+    }
+
+    document.getElementById('exerciseSearchInput').addEventListener('input', function (e) {
+        const searchValue = e.target.value.toLowerCase();
+        const exerciseElements = document.querySelectorAll('.exercise-container');
+        exerciseElements.forEach(el => {
+            const title = el.querySelector('h3').textContent.toLowerCase();
+            if (title.includes(searchValue)) {
+                el.style.display = '';
+            } else {
+                el.style.display = 'none';
+            }
+        });
+    });
+</script>
 
 {% endblock %}

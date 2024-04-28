@@ -497,11 +497,14 @@ def inject_logged_in():
 # Exercises API
 def get_exercises_by_muscle(muscle):
     url = "https://exercisedb.p.rapidapi.com/exercises/bodyPart/" + muscle
+
+    querystring = {"limit":"200"} # High number to get the max amount out of the API
+
     headers = {
         'x-rapidapi-host': "exercisedb.p.rapidapi.com",
         'x-rapidapi-key': os.getenv('EXERCISE_DB_API_KEY')
     }
-    response = requests.request("GET", url, headers=headers)
+    response = requests.request("GET", url, headers=headers, params=querystring)
     return response.json()
 
 def search_youtube(query):
@@ -517,13 +520,13 @@ def search_youtube(query):
 
 @app.route('/exercises/<muscle>')
 def exercises(muscle):
-    print(f"Fetching exercises for muscle: {muscle}")  # Console log
+#    print(f"Fetching exercises for muscle: {muscle}")  # Console log
     try:
         exercises = get_exercises_by_muscle(muscle)
         videos = search_youtube(muscle + ' exercises')
         return jsonify({'exercises': exercises, 'videos': videos})
     except Exception as e:
-        print(f"Error: {e}")  # Console log for the error
+#        print(f"Error: {e}")  # Console log for the error
         return jsonify({'error': str(e)}), 500
 
 
@@ -533,4 +536,3 @@ def exercises(muscle):
 
 if __name__ == "__main__":
     app.run(debug=True) 
-
