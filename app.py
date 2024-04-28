@@ -498,7 +498,7 @@ def inject_logged_in():
 def get_exercises_by_muscle(muscle):
     url = "https://exercisedb.p.rapidapi.com/exercises/bodyPart/" + muscle
 
-    querystring = {"limit":"100"}
+    querystring = {"limit":"200"} # High number to get the max amount out of the API
 
     headers = {
         'x-rapidapi-host': "exercisedb.p.rapidapi.com",
@@ -520,13 +520,13 @@ def search_youtube(query):
 
 @app.route('/exercises/<muscle>')
 def exercises(muscle):
-    print(f"Fetching exercises for muscle: {muscle}")  # Console log
+#    print(f"Fetching exercises for muscle: {muscle}")  # Console log
     try:
         exercises = get_exercises_by_muscle(muscle)
         videos = search_youtube(muscle + ' exercises')
         return jsonify({'exercises': exercises, 'videos': videos})
     except Exception as e:
-        print(f"Error: {e}")  # Console log for the error
+#        print(f"Error: {e}")  # Console log for the error
         return jsonify({'error': str(e)}), 500
 
 
