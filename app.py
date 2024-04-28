@@ -497,11 +497,14 @@ def inject_logged_in():
 # Exercises API
 def get_exercises_by_muscle(muscle):
     url = "https://exercisedb.p.rapidapi.com/exercises/bodyPart/" + muscle
+
+    querystring = {"limit":"100"}
+
     headers = {
         'x-rapidapi-host': "exercisedb.p.rapidapi.com",
         'x-rapidapi-key': os.getenv('EXERCISE_DB_API_KEY')
     }
-    response = requests.request("GET", url, headers=headers)
+    response = requests.request("GET", url, headers=headers, params=querystring)
     return response.json()
 
 def search_youtube(query):
@@ -533,4 +536,3 @@ def exercises(muscle):
 
 if __name__ == "__main__":
     app.run(debug=True) 
-
