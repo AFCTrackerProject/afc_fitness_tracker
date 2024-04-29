@@ -1,0 +1,47 @@
+{% extends "_layout.html" %}
+
+{% block content %}
+<h2>Workout Log Form</h2>
+
+<form action="{{ url_for('workouttracker') }}" method="post">
+
+<label for="workout-id">Workout ID</label><br>
+<input type="workoutid" id="workoutid" name="workoutid" required><br><br>
+
+<label for="start-time">Start Time:</label><br>
+<input type="time" id="start-time" name="start-time" required><br><br>
+    
+<label for="end-time">End Time:</label><br>
+<input type="time" id="end-time" name="end-time" required><br><br>
+
+  <label for="workout-type">Workout Type:</label><br>
+  <input type="radio" id="chest" name="workout-type" value="Chest">
+  <label for="chest">Chest</label><br>
+  <input type="radio" id="arms" name="workout-type" value="Arms">
+  <label for="arms">Arms</label><br>
+  <input type="radio" id="back" name="workout-type" value="Back">
+  <label for="back">Back</label><br>
+  <input type="radio" id="legs" name="workout-type" value="Legs">
+  <label for="legs">Legs</label><br>
+  <input type="radio" id="cardio" name="workout-type" value="Cardio">
+  <label for="cardio">Cardio</label><br>
+
+  <input type="submit" value="Submit">
+</form> 
+
+<h2>Workout Log Table</h2>
+
+<table>
+  <tr>
+    <th>Start Time</th>
+    <th>End Time</th>
+    <th>Workout Type</th>
+  </tr>
+  <tr>
+    <td>{{ start_time }}</td>
+    <td>{{ end_time }}</td>
+    <td>{{ workout_type }}</td>
+  </tr>
+</table>
+
+{% endblock %}
