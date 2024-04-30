@@ -196,7 +196,11 @@
 
     function setupExerciseContainerToggle() {
       document.querySelectorAll('.exercise-container').forEach(container => {
-        container.addEventListener('click', function () {
+        // Listen for clicks on the container, but not on the button
+        container.addEventListener('click', function (event) {
+          if (event.target.classList.contains('add-exercise-btn')) {
+            return; // If the "Add" button was clicked, do nothing
+          }
           const detail = this.querySelector('.exercise-detail');
           if (detail.style.height && detail.style.height !== '0px') {
             detail.style.height = '0px'; // Collapse the panel
@@ -206,6 +210,15 @@
         });
       });
     }
+
+    // Prevent the click on the "Add" button from propagating
+    document.querySelectorAll('.add-exercise-btn').forEach(button => {
+      button.addEventListener('click', function (event) {
+        event.stopPropagation(); // Stop the event from bubbling up to the parent
+        // Add additional functionality for what happens when "Add" is clicked
+      });
+    });
+
 
     document.getElementById('exerciseSearchInput').addEventListener('input', function (e) {
       const searchValue = e.target.value.toLowerCase();
