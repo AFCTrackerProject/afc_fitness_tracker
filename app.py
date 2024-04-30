@@ -14,7 +14,6 @@ from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros,
 from flask_sqlalchemy import SQLAlchemy
 
 
-
 load_dotenv()
 
 app = Flask(__name__)
@@ -57,6 +56,24 @@ def secret():
     user = fitness_repo.get_user_by_id(userid)
     return render_template('secret.html', user=user)
 
+
+def calculate_progress(total, target):
+    # Ensure target is a float
+    if isinstance(target, str):
+        target = float(target)
+    
+    # Calculate progress
+    if target == 0:
+        return 0
+    progress = min(total / target * 100, 100)
+    
+    # Round the progress to the nearest integer
+    progress = round(progress)
+    
+    return progress
+
+
+
 @app.route('/macrotracker', methods=['GET', 'POST'])
 def macrotracker():
     if 'userid' not in session:
@@ -64,15 +81,7 @@ def macrotracker():
         return redirect('/login')
 
     userid = session['userid']
-    targets = session.get(f'targets_{userid}', None)
-
-    """
-    target_caloriesconsumed = session.get('target_caloriesconsumed', None)
-    target_proteinconsumed = session.get('target_proteinconsumed', None)
-    target_carbsconsumed = session.get('target_carbsconsumed', None)
-    target_fatsconsumed = session.get('target_fatsconsumed', None)
-    """
-    
+    targets = session.get(f'targets_{userid}', None)    
 
     if request.method == 'POST':
         # Retrieve form data
@@ -135,7 +144,20 @@ def macrotracker():
                        total_dinner_carbs + total_snack_carbs)
     total_fats = (total_breakfast_fats + total_lunch_fats +
                       total_dinner_fats + total_snack_fats)
-      
+    
+    
+    progress_calories = None
+    progress_protein = None
+    progress_carbs = None
+    progress_fats = None
+
+    if targets:
+        progress_calories = calculate_progress(total_calories, targets['calories'])
+        progress_protein = calculate_progress(total_protein, targets['protein'])
+        progress_carbs = calculate_progress(total_carbs, targets['carbs'])
+        progress_fats = calculate_progress(total_fats, targets['fats'])
+    
+    
     return render_template('macrotracker.html',
                        all_breakfast_macros=all_breakfast_macros,
                        all_lunch_macros=all_lunch_macros,
@@ -156,7 +178,8 @@ def macrotracker():
                            total_snack_protein=total_snack_protein,
                            total_snack_carbs=total_snack_carbs,
                            total_snack_fats=total_snack_fats,
-                           total_calories=total_calories,total_protein=total_protein,total_fats=total_fats,total_carbs=total_carbs, targets=targets)
+                           total_calories=total_calories,total_protein=total_protein,total_fats=total_fats,total_carbs=total_carbs, targets=targets,
+                           progress_calories=progress_calories, progress_protein=progress_protein, progress_carbs=progress_carbs, progress_fats=progress_fats)
 
 # Define the route for the Targets page
 @app.route('/targets', methods=['GET', 'POST'])
@@ -186,6 +209,32 @@ def save_targets():
         return redirect(url_for('macrotracker'))    
 
     return render_template('targets.html')
+
+
+@app.route('/workouttracker', methods=['GET', 'POST'])
+def workouttracker():
+    if 'userid' not in session:
+        flash('You need to log in to use the workout tracker.', 'error')
+        return redirect('/login')
+    
+    workout_logs = None  
+
+    if request.method == 'POST':
+        userid = session['userid']
+        workoutid = request.form.get('workoutid')
+        workouttype = request.form.get('workout-type')
+        starttime = request.form.get('start-time')
+        endtime = request.form.get('end-time')
+    
+        workout_logs = insert_workout_log(userid, workoutid, workouttype, starttime, endtime)
+        if not workout_logs:
+            print('No workout logs found.')
+    
+    return render_template('workouttracker.html', workout_logs=workout_logs)
+
+
+
+
 
     
 
