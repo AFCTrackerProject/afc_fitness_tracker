@@ -11,6 +11,7 @@ import boto3
 import requests 
 from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros, save_target
 from database.workouttracker import get_all_workoutlogs, insert_workout_log
+import psycopg
 
 load_dotenv()
 
@@ -578,7 +579,6 @@ def exercises(muscle):
     except Exception as e:
 #        print(f"Error: {e}")  # Console log for the error
         return jsonify({'error': str(e)}), 500
-
 
 
 # End Exercises API
