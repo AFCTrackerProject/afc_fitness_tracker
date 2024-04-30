@@ -1,3 +1,5 @@
+--AFC Fitness Offical Schema (last updated 4/30)
+
 -- User Table
 CREATE TABLE Users (
     UserID SERIAL PRIMARY KEY,
@@ -11,9 +13,11 @@ CREATE TABLE Users (
     Height FLOAT,
     Weight FLOAT,
     JoinDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    confirmation_token VARCHAR(255)
+    profilepicture VARCHAR(255)
 );
 
-
+-- User Stats Table
 CREATE TABLE UserStats (
     UserID INT PRIMARY KEY,
     DailyCaloriesIntake INT,
@@ -24,60 +28,23 @@ CREATE TABLE UserStats (
     CONSTRAINT fk_user FOREIGN KEY (UserID) REFERENCES Users(UserID)
 );
 
--- Workout History Table
 CREATE TABLE WorkoutHistory (
-    WorkoutID INT PRIMARY KEY,
+    WorkoutID SERIAL PRIMARY KEY,
     UserID INT,
-    WorkoutType VARCHAR(50),
+    ExerciseName VARCHAR(255),  -- From the API: Name of the exercise
+    BodyPart VARCHAR(50),       -- From the API: Targeted body part, corresponds to "bodyPart"
+    Equipment VARCHAR(100),     -- From the API: Equipment used
+    TargetMuscle VARCHAR(100),  -- From the API: Main muscle group targeted
     Duration INT,
     CaloriesBurned FLOAT,
-    StartDateTime TIMESTAMP,
-    EndDateTime TIMESTAMP,
-    FOREIGN KEY (UserID) REFERENCES Users(UserID)
-);
-
--- REMOVE: Nutrition Log Table
-CREATE TABLE NutritionLog (
-    LogID INT PRIMARY KEY,
-    UserID INT,
-    FoodItem VARCHAR(100),
-    Quantity FLOAT,
-    CaloriesConsumed INT,
-    LogDate DATE,
+    StartDateTime TIME,
+    EndDateTime TIME,
+    ExerciseGIF VARCHAR(255),   -- URL to a GIF from the API demonstrating the exercise
     FOREIGN KEY (UserID) REFERENCES Users(UserID)
 );
 
 
--- Friends Table
-CREATE TABLE Friends (
-    FriendshipID INT PRIMARY KEY,
-    UserID1 INT,
-    UserID2 INT,
-    FOREIGN KEY (UserID1) REFERENCES Users(UserID),
-    FOREIGN KEY (UserID2) REFERENCES Users(UserID)
-);
-
--- REMOVE: Messages Table
-CREATE TABLE Messages (
-    MessageID INT PRIMARY KEY,
-    SenderUserID INT,
-    ReceiverUserID INT,
-    MessageContent TEXT,
-    Timestamp TIMESTAMP,
-    FOREIGN KEY (SenderUserID) REFERENCES Users(UserID),
-    FOREIGN KEY (ReceiverUserID) REFERENCES Users(UserID)
-);
-
--- Achievements Table
-CREATE TABLE Achievements (
-    AchievementID INT PRIMARY KEY,
-    UserID INT,
-    AchievementName VARCHAR(100),
-    AchievementDescription TEXT,
-    AchievementDate DATE,
-    FOREIGN KEY (UserID) REFERENCES Users(UserID)
-);
-
+-- MacroTracker Table
 CREATE TYPE meal_type AS ENUM ('Breakfast', 'Lunch', 'Dinner', 'Snack');
 
 CREATE TABLE MacroTracker (
@@ -90,7 +57,9 @@ CREATE TABLE MacroTracker (
     CarbsConsumed FLOAT,
     FatsConsumed FLOAT,
     Meal_Type meal_type,
+    Target_caloriesconsumed FLOAT,
+    Target_proteinconsumed FLOAT,
+    Target_carbsconsumed FLOAT,
+    Target_fatconsumed FLOAT
     FOREIGN KEY (UserID) REFERENCES Users(UserID)
-
-
 );
