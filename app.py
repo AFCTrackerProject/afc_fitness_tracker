@@ -10,6 +10,7 @@ from werkzeug.utils import secure_filename
 import boto3
 import requests 
 from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros, save_target
+# from database.workouttracker import get_all_workoutlogs, insert_workout_log
 from flask_sqlalchemy import SQLAlchemy
 
 
