@@ -95,3 +95,8 @@ CREATE TABLE MacroTracker (
 
 );
 
+ALTER TABLE Users
+ADD COLUMN profilepicture VARCHAR(255);
+
+ALTER TABLE Users
+ALTER COLUMN profilepicture TYPE VARCHAR(255);
