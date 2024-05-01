@@ -1,0 +1,26 @@
+<!-- reset.html -->
+
+{% extends "_layout.html" %}
+
+{% block content %}
+<div class="flex justify-center items-center h-screen"> <!-- Use flexbox to center content vertically and horizontally -->
+  <div class="w-full max-w-lg">
+
+    <div class="mb-12"></div> <!-- Spacer -->
+
+    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+      <h2 class="text-4xl font-bold mb-4">Reset Password</h2>
+
+      <!-- Reset Password Form -->
+      <form action="{{ url_for('reset_password') }}" method="POST" class="mt-4"> <!-- Add margin top for spacing -->
+        <input type="hidden" name="confirmation_token_fp" value="{{ confirmation_token_fp }}">
+        <input type="password" name="password" placeholder="New Password" required class="w-full bg-gray-200 rounded py-2 px-4 mb-4">
+        <input type="password" name="confirm_password" placeholder="Confirm Password" required class="w-full bg-gray-200 rounded py-2 px-4 mb-4">
+        <button type="submit" class="w-full bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+          Reset Password
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

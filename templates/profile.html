@@ -28,9 +28,28 @@
             <p><strong>Height:</strong> {{ user.height }} cm</p>
             <p><strong>Weight:</strong> {{ user.weight }} lbs</p>
         </div>
-        <div class="mt-6">
+        <div class="mt-6 flex flex-col space-y-4">
             <a href="{{ url_for('updateprofile') }}" class="text-blue-600 hover:underline">Update Profile</a>
+            <!-- Add form for deleting the account -->
+            <form id="delete-account-form" action="{{ url_for('delete_account') }}" method="post">
+                <!-- Add the confirmation message -->
+                <p class="text-red-600">Warning: Deleting your profile cannot be undone.</p>
+                <!-- Add hidden input field to confirm deletion -->
+                <input type="hidden" name="confirm" value="yes">
+                <!-- Add buttons for confirming and canceling deletion -->
+                <button type="submit" class="text-red-600 hover:underline">Delete Profile</button>
+            </form>
         </div>
     </div>
 </div>
+
+<script>
+// JavaScript function to confirm deletion
+function confirmDelete() {
+    if (confirm("Are you sure you want to delete your profile?")) {
+        // If user confirms, submit the form
+        document.getElementById('delete-account-form').submit();
+    }
+}
+</script>
 {% endblock %}

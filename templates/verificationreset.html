@@ -1,0 +1,69 @@
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f9f9f9; /* Set background color */
+        margin: 0; /* Reset default margin */
+        padding: 0; /* Reset default padding */
+    }
+
+    .centered-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh; /* Make the container full height of the viewport */
+        padding: 20px; /* Add padding for better appearance */
+    }
+
+    .verification-container {
+        background-color: #ffffff; /* Set background color */
+        border-radius: 5px; /* Add rounded corners */
+        padding: 40px; /* Add padding for content */
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Add shadow for depth */
+        text-align: center; /* Center align content */
+    }
+
+    .instructions {
+        margin-bottom: 20px; /* Add space below the instructions */
+        font-size: 20px; /* Increase font size */
+    }
+
+    input[type="text"] {
+        width: 100%; /* Make the input field full width */
+        padding: 15px; /* Add padding for better appearance */
+        margin-bottom: 20px; /* Add space below the input field */
+        border: 1px solid #ccc; /* Add a border */
+        border-radius: 5px; /* Add rounded corners */
+        box-sizing: border-box; /* Ensure the padding is included in the width */
+        font-size: 18px; /* Increase font size */
+    }
+
+    input[type="submit"] {
+        width: 100%; /* Make the submit button full width */
+        padding: 15px; /* Add padding for better appearance */
+        background-color: #007bff; /* Set background color */
+        color: #fff; /* Set text color */
+        border: none; /* Remove border */
+        border-radius: 5px; /* Add rounded corners */
+        cursor: pointer; /* Add cursor on hover */
+        box-sizing: border-box; /* Ensure the padding is included in the width */
+        font-size: 18px; /* Increase font size */
+    }
+
+    input[type="submit"]:hover {
+        background-color: #0056b3; /* Darken the background color on hover */
+    }
+</style>
+
+<div class="centered-container">
+    <div class="verification-container">
+        <h1 class="instructions">Please check <strong>{{ user_email }}</strong> for a confirmation code.</h1>
+        <p class="instructions">Note: This form can be submitted only once, please check your code carefuly!</p>
+        <p class="instructions">Enter the code below to verify your email address and reset your password:</p>
+        <form action="/verify_token_fp" method="POST">
+            <input type="text" id="token" name="token" placeholder="Enter Confirmation Token">
+            <input type="hidden" name="email" value="{{ user_email }}">
+            <input type="submit" value="Submit">
+        </form>
+    </div>
+</div>
+
