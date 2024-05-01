@@ -8,18 +8,15 @@
     <form action="{{ url_for('workouttracker') }}" method="post">
       <label for="start-time">Start Time:</label><br>
       <input type="time" id="start-time" name="start-time" required><br><br>
-
       <label for="end-time">End Time:</label><br>
       <input type="time" id="end-time" name="end-time" required><br><br>
 
       <!-- Container for dynamically loaded exercises -->
-      <div id="exerciseContainer"></div>
-
-      <div class="flex justify-start">
-        <div class="w-full" style="max-width: 250px;"> <!-- Smaller max-width -->
+      <div id="exerciseContainer" class="exercise-content flex">
+        <!-- Buttons and exercise list are side-by-side now -->
+        <div class="button-container">
           <div class="bg-white shadow-xl rounded px-8 pt-6 pb-8 mb-4"
             style="border-top: 2px solid rgba(0, 0, 0, 0.05); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);">
-            <!-- Updated div for vertically listed text buttons -->
             <div class="flex flex-col items-center">
               {% for section in ['Chest', 'Back', 'Arms', 'Legs'] %}
               <button onclick="loadExercises('{{ section|lower }}')"
@@ -28,19 +25,15 @@
               </button>
               {% endfor %}
             </div>
-            <!-- Div for exercise display and search functionality -->
-            <div class="exercise-display mt-4">
-              <!-- Search bar for exercises, initially hidden -->
-              <input type="text" id="exerciseSearchInput" placeholder="Search exercises..."
-                class="hidden w-full p-2 border border-gray-300 rounded mb-4">
-              <!-- Container where exercises will be displayed -->
-              <div id="exercisesList">
-                <!-- Dynamic content will be loaded here -->
-              </div>
-            </div>
           </div>
         </div>
+        <div class="exercise-display" style="flex: 3; min-width: 20%; margin-left: 150px; margin-top: -150px;">
+          <input type="text" id="exerciseSearchInput" placeholder="Search exercises..."
+            class="hidden w-64 p-2 border border-gray-300 rounded mb-4">
+          <div id="exercisesList"></div>
+        </div>        
       </div>
+
 
       <input type="submit" value="Submit">
     </form>
@@ -53,7 +46,7 @@
     <table id="exerciseTable" class="w-full">
       <thead>
         <tr>
-          <th>Exercise</th>
+          <th>List of Exercises Completed</th>
         </tr>
       </thead>
       <tbody>
@@ -251,11 +244,11 @@
   }
 
   #exercisesList {
-    max-height: 400px;
+    max-height: 350px;
     /* Adjust based on your design needs */
     overflow-y: auto;
     /* Enables vertical scrolling */
-    width: 100%;
+    width: 77%; /* (77% and W-64 | Matches with search bar width */ 
     /* Ensures it fills the container */
     border: 1px solid #ccc;
     /* Optional: adds a border for better visual separation */
