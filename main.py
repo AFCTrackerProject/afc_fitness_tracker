@@ -62,7 +62,4 @@ def topic(id):
     #     print(comments)
     return render_template("forumpost.html", topic=topic, comments=comments )
 
-
-
-
 app.run(debug=True, port=5001)

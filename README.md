@@ -74,3 +74,8 @@ This project is an academic exercise and is closed for external contributions. I
 
 ## License
 This project is licensed under the University of North Carolina at Charlotte’s academic policies. All codebase is for educational purposes and may not be used for commercial intent without proper permissions.
+
+
+## Docker
+docker build -t rob-server:latest 
+docker run -p 5001:8000 rob-server:latest

@@ -7,6 +7,27 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.min.css">
     <style>
+        .flash-message {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .flash-success {
+            background-color: #ccffcc;
+            color: #006600;
+        }
+        .progress-bar {
+            background-color: #4CAF50; /* Green background for the progressed part */
+            height: 20px;
+            width: 0%; /* Start with 0% width */
+            color: white;
+            text-align: center;
+            line-height: 20px;
+            font-size: 14px;
+            transition: width 0.5s ease-in-out; /* Transition for smooth width change */
+            border-radius: 10px; /* Rounded corners */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Shadow effect */
+        }
         .slider label {
             color: white;
         }
@@ -116,6 +137,9 @@
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
+        .button-container {
+            text-align: center; 
+        }
         .button:hover {
             background-color: #0056b3;
         }
@@ -124,7 +148,6 @@
             padding: 20px;
             color: #fff; 
         }
-        /* CSS for Total Section */
         .total-section {
             margin-bottom: 20px;
             padding: 10px;
@@ -150,6 +173,16 @@
             font-weight: bold;
             margin-right: 5px;
         }
+        .clear-button {
+            background-color: #ff0000; /* Red background color */
+            color: #ffffff; /* White text color */
+            padding: 10px 20px; /* Padding for the button */
+            border: none; /* No border */
+            border-radius: 5px; /* Rounded corners */
+            cursor: pointer; /* Cursor style */
+            font-size: 16px; /* Font size */
+            transition: background-color 0.3s ease; /* Smooth transition for background color */
+        }        
     </style>
     <script>
         $(document).ready(function() {
@@ -169,11 +202,32 @@
 
     <div class="container mx-auto px-6 py-8">
         <h1 class="text-4xl font-bold text-center text-gray-800 mb-4">Macro Tracker</h1>
-        <!-- Dynamic Progress Bar -->
-        <div class="bg-gray-200 rounded-full h-6 mb-6">
-            <div class="bg-blue-600 h-6 rounded-full" style="width: 25%;"></div> <!-- Example width, update dynamically -->
-        </div>
         <div class="text-center mb-8">
+        <!--Progress Bars-->
+        <div class="progress-bar" style="width: {{ progress_calories }}%;">
+            {{ progress_calories }}%
+        </div>
+        <div class="progress-bar" style="width: {{ progress_protein }}%;">
+            {{ progress_protein }}%
+        </div>
+        <div class="progress-bar" style="width: {{ progress_carbs }}%;">
+            {{ progress_carbs}}%
+        </div>
+        <div class="progress-bar" style="width: {{ progress_fats }}%;">
+            {{ progress_fats }}%
+        </div>
+        <br>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+            
+
             <!-- GOALS -->
             <p><b>Target Calories: </b>{{ total_calories }} / {{ targets.calories if targets else 'No data' }}</p>
             <p><b>Target Protein: </b>{{ total_protein }} / {{ targets.protein if targets else 'No data' }}</p>
@@ -359,6 +413,12 @@
         <p>No data available. Add a food item above.</p>
         {% endif %}
     </div>
+    <div class="button-container">
+        <form method="POST" action="{{ url_for('clear_breakfast_logs_route') }}">
+            <button class="clear-button" type="submit">Clear Breakfast Logs</button>
+        </form>
+    </div>
+    <br>
     <div class="total-section">
         <h3>Breakfast Totals</h3>
         <ul>
@@ -398,6 +458,12 @@
         <p>No data available. Add a food item above.</p>
         {% endif %}
     </div>
+    <div class="button-container">
+        <form method="POST" action="{{ url_for('clear_lunch_logs_route') }}">
+            <button class="clear-button" type="submit">Clear Lunch Logs</button>
+        </form>
+    </div>
+    <br>
     <div class="total-section">
         <h3>Lunch Totals</h3>
         <ul>
@@ -437,6 +503,12 @@
     <p>No data available. Add a food item above.</p>
     {% endif %}
 </div>
+<div class="button-container">
+    <form method="POST" action="{{ url_for('clear_dinner_logs_route') }}">
+        <button class="clear-button" type="submit">Clear Dinner Logs</button>
+    </form>
+</div>
+<br>
 <div class="total-section">
     <h3>Dinner Totals</h3>
     <ul>
@@ -476,6 +548,12 @@
     <p>No data available. Add a food item above.</p>
     {% endif %}
 </div>
+<div class="button-container">
+    <form method="POST" action="{{ url_for('clear_snack_logs_route') }}">
+        <button class="clear-button" type="submit">Clear Snack Logs</button>
+    </form>
+</div>
+<br>
 <div class="total-section">
     <h3>Snack Totals</h3>
     <ul>
@@ -485,5 +563,6 @@
         <li><strong>Total Fats:</strong> {{ total_snack_fats }}</li>
     </ul>
 </div>
+
 
 {% endblock %}
