@@ -31,11 +31,11 @@
           <input type="text" id="exerciseSearchInput" placeholder="Search exercises..."
             class="hidden w-64 p-2 border border-gray-300 rounded mb-4">
           <div id="exercisesList"></div>
-        </div>        
+        </div>
       </div>
 
 
-      <input type="submit" value="Submit">
+      <input type="submit" value="Submit" style="background-color: #f4f4f4; border: 1px solid #ccc; padding: 10px 20px; cursor: pointer; border-radius: 5px;">
     </form>
   </div>
 
@@ -56,6 +56,7 @@
   </div>
 </div>
 <!-- Exercise Log Table -->
+
 
 <script>
   // Display || API parameters
@@ -101,14 +102,15 @@
       const gifUrl = exercise.gifUrl || '/static/images/placeholder.gif'; // Use a placeholder if no GIF is provided
 
       htmlContent += `
-    <div class="exercise-container">
-        <h3><strong>${toTitleCase(exercise.name)}</strong></h3>
-        <div class="exercise-detail">
-            <img src="${gifUrl}" alt="Exercise GIF" style="display: block; margin-left: auto; margin-right: auto; height: auto; border: 2px solid black; margin-bottom: 20px;">
-        </div>
-        <button type="button" class="add-exercise-btn">Add</button>
-    </div>
+  <div class="exercise-container">
+      <h3><strong>${toTitleCase(exercise.name)}</strong></h3>
+      <div class="exercise-detail">
+          <img src="${gifUrl}" alt="Exercise GIF" style="display: block; margin-left: auto; margin-right: auto; height: auto; border: 2px solid black; margin-bottom: 20px;">
+      </div>
+      <button type="button" class="add-exercise-btn">Add</button>
+  </div>
 `;
+
     });
     exercisesContainer.innerHTML = htmlContent;
     setupExerciseContainerToggle(); // Setup functionality for showing and hiding details
@@ -198,6 +200,8 @@
     border-bottom: 1px solid #ccc;
     background-color: #f9f9f9;
     transition: background-color 0.3s, box-shadow 0.3s;
+    display: flex;
+    flex-direction: column;
   }
 
   .exercise-container:hover {
@@ -248,27 +252,27 @@
     /* Adjust based on your design needs */
     overflow-y: auto;
     /* Enables vertical scrolling */
-    width: 77%; /* (77% and W-64 | Matches with search bar width */ 
+    width: 77%;
+    /* (77% and W-64 | Matches with search bar width */
     /* Ensures it fills the container */
     border: 1px solid #ccc;
     /* Optional: adds a border for better visual separation */
   }
 
   .add-exercise-btn {
-    padding: 8px 16px;
-    background-color: #4CAF50;
-    /* Green background */
-    color: white;
-    /* White text */
+    padding: 5px 10px;
+    background-color: #4CAF50; /* Green background */
+    color: white; /* White text */
     border: none;
     border-radius: 4px;
     cursor: pointer;
     margin-top: 10px;
+    align-self: flex-end;
+    margin-top: auto;
   }
 
   .add-exercise-btn:hover {
-    background-color: #45a049;
-    /* Darker green background on hover */
+    background-color: #45a049; /* Darker green background on hover */
   }
 
   .flex {
