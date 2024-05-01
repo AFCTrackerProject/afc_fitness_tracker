@@ -2,13 +2,19 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, abort, flash, get_flashed_messages, jsonify, session
 from dotenv import load_dotenv
 from database import fitness_repo
+from database.fitness_repo import get_confirmation_token, verify_confirmation_token, get_user_by_id, generate_confirmation_token
 from flask_bcrypt import Bcrypt
 import googlemaps
 import openai
 from botocore.exceptions import NoCredentialsError
+from flask_mail import Mail, Message
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+from twilio.rest import Client
 from werkzeug.utils import secure_filename
 import boto3
 import requests 
+import secrets
 from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros, save_target, clear_logs
 # from database.workouttracker import get_all_workoutlogs, insert_workout_log
 from flask_sqlalchemy import SQLAlchemy
@@ -17,6 +23,33 @@ from flask_sqlalchemy import SQLAlchemy
 load_dotenv()
 
 app = Flask(__name__)
+mail = Mail(app)
+sg = SendGridAPIClient(os.getenv('SGKEY'))
+
+#client = Client("str", "str")
+
+
+# Amazon SES SMTP configuration
+'''
+app.config['MAIL_SERVER'] = 'email-smtp.us-east-1.amazonaws.com'  # Replace <region> with your AWS region, e.g., 'us-west-2'
+app.config['MAIL_PORT'] = 465  # Use 465 for SSL/TLS or 587 for STARTTLS
+app.config['MAIL_USE_SSL'] = True  # Set to True if using SSL/TLS
+app.config['MAIL_USE_TLS'] = False  # Set to False if using SSL/TLS
+app.config['MAIL_USERNAME'] = 'AKIAYS2NRIK4A6SRWMHW'  # SMTP username generated in the previous step
+app.config['MAIL_PASSWORD'] = 'BDaeEdgCboEir98hOfE5wsNiQlqShsuvs9FD1d7tty1Z'  # SMTP password generated in the previous step
+app.config['MAIL_DEFAULT_SENDER'] = 'camcope247@gmail.com'  # Replace with your verified email address
+'''
+
+app.config['MAIL_SERVER'] = 'smtp.sendgrid.net'  # SMTP server for SendGrid
+app.config['MAIL_PORT'] = 587  # Port for TLS connections
+app.config['MAIL_USE_TLS'] = True  # Enable TLS encryption
+app.config['MAIL_USERNAME'] = 'apikey'  # SendGrid username
+app.config['MAIL_PASSWORD'] = os.getenv('SGKEY')  # SendGrid API key as password
+app.config['MAIL_DEFAULT_SENDER'] = 'camcope247@gmail.com'  # Your verified sender email address
+
+# Initialize Flask-Mail
+mail = Mail(app)
+ses_client = boto3.client('ses', region_name='us-east-1')
 
 app.secret_key = os.getenv('APP_SECRET_KEY')
 api_key = os.getenv('GMAPS_API_KEY')
@@ -305,7 +338,8 @@ def signup():
         username = request.form.get('username')
         password = request.form.get('password')
         confirmpassword = request.form.get('confirmpassword')
-
+        confirmation_token = get_confirmation_token(email)  # Pass email to get_confirmation_token
+        
         # Check that username and password are not empty
         if not username or not password:
             flash('Username/password cannot be empty', 'error')
@@ -316,16 +350,372 @@ def signup():
             flash('Passwords do not match', 'error')
             return render_template('signup.html', show_popup=True)
 
+        # Check if the provided username and email already exist in the database
+        if not fitness_repo.is_username_available(username):
+            flash('Username already exists. Please choose a different username.', 'error')
+            return render_template('signup.html', show_popup=True)
+
+        if not fitness_repo.is_email_available(email):
+            flash('Email address already exists. Please choose a different email.', 'error')
+            return render_template('signup.html', show_popup=True)
+
         # Encrypts password and stores it as a hashed password
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
         # Executes the SQL code and flashes a message to indicate it was successful
-        if fitness_repo.create_user(firstname, lastname, email, username, hashed_password):
+        if fitness_repo.create_user(firstname, lastname, email, username, hashed_password, confirmation_token):
             flash('User account successfully created!', 'info')
-            return render_template('signup.html', show_popup=True)
+            
+            # Retrieve the newly created user's details and set session user ID
+            user = fitness_repo.get_user_by_username(username)
+            session['userid'] = user['userid']
+
+            # Send confirmation email to the user
+            send_confirmation_email(email, firstname)
+
+        # Render the verification page with user's email
+        return render_template('verification.html', user_email=email)
 
     # Render the signup form template for GET requests
     return render_template('signup.html')
+
+
+
+
+
+# Function to send confirmation email
+def send_confirmation_email(email, firstname):
+    confirmation_token = get_confirmation_token(email)
+
+    message = Mail(
+        from_email='camcope247@gmail.com',  
+        to_emails=email,
+        subject='Welcome to AFC Fitness!',
+        html_content=f"""
+        <html>
+        <head>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                }}
+                .container {{
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    background-color: #f9f9f9;
+                    border-radius: 5px;
+                }}
+                .header {{
+                    text-align: center;
+                    margin-bottom: 20px;
+                }}
+                .confirmation-code {{
+                    font-weight: bold;
+                }}
+                .footer {{
+                    margin-top: 20px;
+                    text-align: center;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2>Dear {firstname},</h2>
+                    <p>Thank you for signing up on our website!</p>
+                </div>
+                <div>
+                    <p>Your confirmation code is: <span class="confirmation-code">{confirmation_token}</span></p>
+                </div>
+                <div class="footer">
+                    <p>Best Regards,<br>The AFC Fitness Team</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+    )
+
+    try:
+        # Send the email using the SendGrid API
+        response = sg.send(message)
+        print(response.status_code)
+        print(response.body)
+        print(response.headers)
+    except Exception as e:
+        print(str(e))
+
+# Route to verify token
+@app.route('/verify_token', methods=['POST'])
+def verify_token():
+    # Get user ID from session
+    user_id = session.get('userid')
+    if not user_id:
+        return redirect(url_for('login'))  # Redirect to login page if user ID not found in session
+    
+    # Fetch user from the database based on user ID
+    user = fitness_repo.get_user_by_id(user_id)
+    print(user.get('email'))
+    print(user.get('email'))
+    if not user:
+        return "User not found"  # Handle case where user is not found in the database
+    
+    # Check if the request method is POST
+    if request.method == 'POST':
+        token_entered = request.form['token']
+        if verify_confirmation_token(user['email'], token_entered):
+            # If the token matches, render the profile page
+            return render_template('profile.html', user=user)
+        else:
+            # If the token doesn't match, render an error message or redirect back to the form
+            flash('Invalid token. Please try again', 'error')
+            return render_template('verification.html')
+
+    # Render the verification form template with the user object
+    return render_template('verification.html', user=user)
+
+# Route to display verification form
+@app.route('/verification_form')
+def verification_form():
+    # Check if user ID is in session
+    if 'userid' not in session:
+        flash('You need to log in to see your profile.', 'error')
+        return redirect('/login')
+    
+    # Get user ID from session
+    userid = session.get('userid')
+    
+    # Fetch user from the database based on user ID
+    user = fitness_repo.get_user_by_id(userid)
+    
+    # Check if user exists
+    if not user:
+        return "User not found"  # Handle case where user is not found in the database
+    
+    # Render the verification form template with the user object
+    return render_template('verification.html', user=user)
+
+
+
+@app.route('/send_reset_email', methods=['POST'])
+def send_reset_email():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        
+        # Generate a confirmation token for password reset
+        confirmation_token_fp = generate_confirmation_token()
+        fitness_repo.update_confirmation_token(email, confirmation_token_fp)
+        print(email)
+        print(confirmation_token_fp)
+        
+        # Update the user's confirmation token in the database
+        if fitness_repo.update_confirmation_token(email, confirmation_token_fp):
+            # Get user details from the database using email
+            user = fitness_repo.get_user_by_email(email)
+            
+            # Check if user exists and retrieve firstname
+            if user:
+                firstname = user.get('firstname')
+                username = user.get('username')
+                userid = user.get('userid')
+                
+                message = Mail(
+                    from_email='camcope247@gmail.com',  
+                    to_emails=email,
+                    subject='Password Reset',
+                    html_content=f"""
+                        <html>
+                        <head>
+                            <style>
+                                body {{
+                                    font-family: Arial, sans-serif;
+                                }}
+                                .container {{
+                                    max-width: 600px;
+                                    margin: 0 auto;
+                                    padding: 20px;
+                                    background-color: #f9f9f9;
+                                    border-radius: 5px;
+                                }}
+                                .header {{
+                                    text-align: center;
+                                    margin-bottom: 20px;
+                                }}
+                                .confirmation-code {{
+                                    font-weight: bold;
+                                }}
+                                .footer {{
+                                    margin-top: 20px;
+                                    text-align: center;
+                                }}
+                            </style>
+                        </head>
+                        <body>
+                            <div class="container">
+                                <div class="header">
+                                    <h2>Dear {firstname},</h2>
+                                    <p>In case you forgot, your username is: {username}</p>
+                                    <p>To reset your password, please use the code below!</p>
+                                </div>
+                                <div>
+                                    <p>Your confirmation code is: <span class="confirmation-code">{confirmation_token_fp}</span></p>
+                                    <p>Please be advised that this token is valid only once and must be entered</p>
+                                    <p>correctly on your first attempt exactly as it appears above!</p>
+                                </div>
+                                <div class="footer">
+                                    <p>Best Regards,<br>The AFC Fitness Team</p>
+                                </div>
+                            </div>
+                        </body>
+                        </html>
+                    """
+                )
+
+                try:
+                    # Send the email using the SendGrid API
+                    response = sg.send(message)
+                    print(response.status_code)
+                    print(response.body)
+                    print(response.headers)
+                except Exception as e:
+                    print(str(e))
+                    flash('Error sending email. Please try again.', 'error')
+                    return render_template('forgotpassword.html')
+                
+                # Render a page similar to verification.html
+                print(f"Passing ***{email}*** to verify_token_fp")
+                return redirect(url_for('verify_token_fp', email=email))
+        
+        flash('User not found.', 'error')
+        return redirect(url_for('login'))
+
+        
+@app.route('/verify_token_fp', methods=['GET', 'POST'])
+def verify_token_fp():
+    # Get user email from form data for POST requests
+    #email = request.form.get('email')
+    #confirmation_token_fp = request.form.get('token')
+    #print("confirmation_token_fp: " ,confirmation_token_fp)
+    #email = fitness_repo.get_useremail_by_tokenfp(confirmation_token_fp)
+    email = request.args.get('email')
+    print("Received email:", email)
+
+    # Check if the request method is POST
+    if request.method == 'POST':
+        email = request.form.get('email')
+        print("Received email:", email)
+        token_entered = request.form['token']
+        print("Token entered:", token_entered)
+        print("Email:", email)
+        if email is None:
+            # Handle the case where email is not found in form data
+            flash('Email parameter is missing', 'error')
+            return redirect(url_for('login'))  # Redirect to login page or appropriate page
+        if fitness_repo.verify_confirmation_token_fp(email, token_entered):
+            # If the token matches, render the reset password page
+            return redirect(url_for('reset_password', confirmation_token_fp=token_entered))
+            #return render_template('reset.html', confirmation_token_fp=token_entered)
+        else:
+            # If the token doesn't match, render an error message or redirect back to the form
+            flash('Invalid token. Please try again', 'error')
+            return redirect(url_for('login'))
+
+    # Render the verification form template with the user's email
+    return render_template('verificationreset.html', user_email=email)
+
+
+
+
+
+@app.route('/reset_password', methods=['GET', 'POST'])
+def reset_password():
+    if request.method == 'GET':
+        # Retrieve the confirmation token from the query parameters
+        confirmation_token_fp = request.args.get('confirmation_token_fp')
+        print("confirmation_token_fp: ", confirmation_token_fp)
+
+        # Store the confirmation token in the session
+        session['confirmation_token_fp'] = confirmation_token_fp
+
+        # Render the reset password form template
+        return render_template('reset.html')
+
+    elif request.method == 'POST':
+        # Retrieve the confirmation token from the session
+        confirmation_token_fp = session.get('confirmation_token_fp')
+        print("confirmation_token_fp: ", confirmation_token_fp)
+
+        # Retrieve email associated with the confirmation token
+        email = fitness_repo.get_useremail_by_tokenfp(confirmation_token_fp)
+        print('email is below')
+        print(email)
+
+        # Retrieve user ID associated with the email
+        user_id = fitness_repo.get_userid_by_email(email)
+        print('user_id: ', user_id)
+
+        # Retrieve password and confirm password from the form
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+
+        # Check if passwords match
+        if password != confirm_password:
+            flash('Passwords do not match', 'error')
+            return render_template('reset.html')
+
+        # Hash the new password
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+        # Update the password in the database
+        if fitness_repo.update_password(user_id, hashed_password):
+            flash('Password successfully updated!', 'success')
+        else:
+            flash('Failed to update password', 'error')
+
+        # Redirect to login page
+        return redirect(url_for('login'))
+
+    # Render the reset password form template for other HTTP methods
+    return render_template('reset.html')
+
+
+
+'''
+@app.route('/verify_phone', methods=['GET', 'POST'])
+def verify_phone():
+    if request.method == 'POST':
+        # Retrieve the phone number and verification code from the form
+        #phone_number = request.form.get('phone_number')
+        print(phone_number)
+        verification_code = request.form.get('verification_code')
+        
+        # Verify the phone number and code (you should implement this logic using Twilio)
+        if verify_phone_number(phone_number, verification_code):
+            flash('Phone number verified successfully!', 'success')
+            # Redirect to profile page upon successful verification
+            return redirect(url_for('profile'))
+        else:
+            flash('Phone number verification failed. Please try again.', 'error')
+            return render_template('verification.html')
+
+    # Render the verification page for GET requests
+    return render_template('verification.html')
+
+def verify_phone_number(phone_number, verification_code):
+    try:
+        verification_check = client.verify.services('VA11676748fbdd2f113ed0bab0b96f1cc5') \
+            .verification_checks \
+            .create(to=phone_number, code=verification_code)
+
+        # Check if the verification check was successful
+        if verification_check.status == 'approved':
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(f"Error verifying phone number: {e}")
+        return False
+'''
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -371,11 +761,16 @@ def login():
     return render_template('login.html')
 
 
+@app.route('/forgotpassword')
+def forgot_password():
+    return render_template('forgotpassword.html')
+
 @app.post('/logout')
 def logout():
     session.pop('userid', None)
-    return redirect('/')
     flash('You have been logged out.','info')
+    return redirect('/')
+    
 
 @app.get('/profile')
 def profile():
@@ -467,10 +862,14 @@ def find_places():
     
 @app.route('/chatbot.html')
 def chatbot():
+    if 'userid' not in session:
+        flash('You need to log in to use the Finder feature.','error')
+        return redirect('/login')
     return render_template('chatbot.html')
 
 # Route to handle user input and get bot response
 @app.route('/chatbot', methods=['POST'])
+
 def handle_message():
     data = request.get_json()
     message = data['message']
@@ -533,18 +932,29 @@ def handle_question_submission():
 
 @app.route('/updateprofile', methods=['GET', 'POST'])
 def updateprofile():
-    if 'userid' not in session:
-        flash('You need to log in to update your profile.', 'error')
-        return redirect('/login')
-    
     if request.method == 'POST':
         # Retrieve form data
         email = request.form.get('email')
+        firstname = request.form.get('firstname')
+        lastname = request.form.get('lastname')
+        username = request.form.get('username')
         dateofbirth = request.form.get('dateofbirth')
         gender = request.form.get('gender')
         height = request.form.get('height')
         weight = request.form.get('weight')
         profile_picture = request.files['profilepicture']
+
+        # Fetch user data
+        user = fitness_repo.get_user_by_id(session['userid'])
+
+        # Check if the provided username and email are different from the current ones
+        if user['username'] != username and not fitness_repo.is_username_available(username):
+            flash('Username already exists. Please choose a different username.', 'error')
+            return redirect(request.url)
+        
+        if user['email'] != email and not fitness_repo.is_email_available(email):
+            flash('Email address already exists. Please choose a different email.', 'error')
+            return redirect(request.url)
 
         # Validate profile picture
         if profile_picture:
@@ -555,30 +965,59 @@ def updateprofile():
                 s3.upload_fileobj(profile_picture, s3_bucket_name, filename)
                 # Get S3 URL for uploaded profile picture
                 profile_picture_url = f"https://{s3_bucket_name}.s3.amazonaws.com/{filename}"
-                
-                # Update user profile in the database with the S3 URL
-                success = fitness_repo.update_user_profile(
-                    userid=session['userid'],
-                    email=email,
-                    dateofbirth=dateofbirth,
-                    gender=gender,
-                    height=height,
-                    weight=weight,
-                    profilepicture=profile_picture_url  # Pass S3 URL to function
-                )
-
-                if success:
-                    flash('Profile updated successfully!', 'success')
-                else:
-                    flash('Failed to update profile. Please try again.', 'error')
-
             except NoCredentialsError:
                 flash('AWS credentials not available. Profile picture upload failed.', 'error')
+                return redirect(request.url)
+        else:
+            # If no profile picture is provided, retain the existing profile picture URL
+            profile_picture_url = user['profilepicture']
+
+        # Update user profile in the database
+        success = fitness_repo.update_user_profile(
+            userid=session['userid'],
+            email=email,
+            firstname=firstname,
+            lastname=lastname,
+            username=username,
+            dateofbirth=dateofbirth,
+            gender=gender,
+            height=height,
+            weight=weight,
+            profilepicture=profile_picture_url  # Use existing URL or the new one if provided
+        )
+
+        if success:
+            flash('Profile updated successfully!', 'success')
+        else:
+            flash('Failed to update profile. Please try again.', 'error')
+
+        return redirect(url_for('updateprofile'))
 
     # Fetch user data for rendering the profile page
     user = fitness_repo.get_user_by_id(session['userid'])
-    #print(user.profilepicture)
     return render_template('updateprofile.html', user=user)
+
+
+
+@app.route('/delete_account', methods=['GET', 'POST'])
+def delete_account():
+    user = fitness_repo.get_user_by_id((session['userid']))
+    if request.method == 'POST':
+        # Delete the user's account and redirect to signup page
+        success = fitness_repo.remove_user_data(session['userid'])
+        if success:
+            flash('Account successfully deleted! Please LOGOUT', 'success')
+            return redirect(url_for('signup'))
+        else:
+            flash('Failed to delete account. Please try again.', 'error')
+            return redirect(url_for('profile'))  # Redirect back to profile page if deletion fails
+
+    # If the request method is GET, render the confirmation template
+    return render_template('profile.html', user=user)
+
+
+
+
 
 
 @app.context_processor
