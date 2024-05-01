@@ -95,7 +95,8 @@ def get_user_by_id(userid: int) -> dict[str, Any] | None:
                     height,
                     weight,
                     profilepicture,
-                    confirmation_token
+                    confirmation_token,
+                    confirmation_token_fp
                 FROM
                     users
                 WHERE userid = %s
@@ -104,21 +105,31 @@ def get_user_by_id(userid: int) -> dict[str, Any] | None:
             return user
 
 
-def update_user_profile(userid: int, email: str, dateofbirth: str, gender: str, height: int, weight: int, profilepicture: str) -> bool:
+def update_user_profile(userid: int, email: str, firstname: str, lastname: str, username: str, dateofbirth: str, gender: str, height: int, weight: int, profilepicture: str = None) -> bool:
     pool = get_pool()
     with pool.connection() as conn:
         with conn.cursor() as cur:
             try:
-                cur.execute("""
-                    UPDATE users
-                    SET email = %s, dateofbirth = %s, gender = %s, height = %s, weight = %s, profilepicture = %s
-                    WHERE userid = %s
-                """, (email, dateofbirth, gender, height, weight, profilepicture, userid))
+                if profilepicture:
+                    cur.execute("""
+                        UPDATE users
+                        SET email = %s, firstname = %s, lastname = %s, username = %s, dateofbirth = %s, gender = %s, height = %s, weight = %s, profilepicture = %s
+                        WHERE userid = %s
+                    """, (email, firstname, lastname, username, dateofbirth, gender, height, weight, profilepicture, userid))
+                else:
+                    cur.execute("""
+                        UPDATE users
+                        SET email = %s, firstname = %s, lastname = %s, username = %s, dateofbirth = %s, gender = %s, height = %s, weight = %s
+                        WHERE userid = %s
+                    """, (email, firstname, lastname, username, dateofbirth, gender, height, weight, userid))
                 conn.commit()
                 return cur.rowcount > 0  # Check if the update was successful
             except Exception as e:
                 print(f"Error updating user profile: {e}")
                 return False
+
+
+
 
 def verify_confirmation_token(email: str, token_entered: str) -> bool:
     pool = get_pool()
@@ -149,4 +160,152 @@ def get_confirmation_token(email: str) -> str:
                 return result[0]  # Return the confirmation token
             else:
                 return None  # If no confirmation token found for the email
+            
+def update_confirmation_token(email: str, confirmation_token_fp: str) -> bool:
+    pool = get_pool()
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            try:
+                cur.execute("""
+                    UPDATE users
+                    SET confirmation_token_fp = %s
+                    WHERE email = %s
+                """, (confirmation_token_fp, email))
+                conn.commit()
+                return cur.rowcount > 0  # Check if the update was successful
+            except Exception as e:
+                print(f"Error updating confirmation token: {e}")
+                return False
+            
+def update_password(user_id: str, password: str) -> bool:
+    pool = get_pool()
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            try:
+                cur.execute("""
+                    UPDATE users
+                    SET password = %s
+                    WHERE userid = %s
+                """, (password, user_id))
+                conn.commit()
+                return cur.rowcount > 0  # Check if the update was successful
+            except Exception as e:
+                print(f"Error updating password: {e}")
+                return False
+
+def get_user_by_email(email: str) -> dict:
+    pool = get_pool()
+    with pool.connection() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute("""
+                SELECT
+                    *
+                FROM
+                    users
+                WHERE email = %s
+            """, [email])
+            user = cur.fetchone()
+            return user
+
+def get_user_by_confirmation_token(confirmation_token_fp: str) -> dict:
+    pool = get_pool()
+    with pool.connection() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute("""
+                SELECT *
+                FROM users
+                WHERE confirmation_token_fp = %s
+            """, [confirmation_token_fp])
+            user = cur.fetchone()
+            return user
+        
+def verify_confirmation_token_fp(email: str, token_entered: str) -> bool:
+    pool = get_pool()
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT confirmation_token_fp
+                FROM users
+                WHERE email = %s
+            """, [email])
+            result = cur.fetchone()
+            if result and result[0] == token_entered:
+                return True
+            else:
+                return False
+            
+    
+def get_userid_by_email(email: str) -> dict:
+    pool = get_pool()
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            try:
+                cur.execute("""
+                    SELECT userid
+                    FROM users
+                    WHERE email = %s
+                """, (email,))
+                user_id = cur.fetchone()
+                if user_id:
+                    return user_id[0]  # Return the email string
+                else:
+                    return None
+            except Exception as e:
+                print(f"Error retrieving user id: {e}")
+                return None
+        
+def get_useremail_by_tokenfp(confirmation_token_fp: str) -> str:
+    pool = get_pool()
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            try:
+                cur.execute("""
+                    SELECT email
+                    FROM users
+                    WHERE confirmation_token_fp = %s
+                """, (confirmation_token_fp,))
+                email = cur.fetchone()
+                if email:
+                    return email[0]  # Return the email string
+                else:
+                    return None
+            except Exception as e:
+                print(f"Error retrieving user email: {e}")
+                return None
+            
+def is_username_available(username: str) -> bool:
+    # Query the database to check if the username exists
+    pool = get_pool()
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM users WHERE username = %s", (username,))
+            count = cur.fetchone()[0]
+            return count == 0  # Return True if count is 0 (username is available), False otherwise
+
+def is_email_available(email: str) -> bool:
+    # Query the database to check if the email exists
+    pool = get_pool()
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM users WHERE email = %s", (email,))
+            count = cur.fetchone()[0]
+            return count == 0  # Return True if count is 0 (email is available), False otherwise
+
+def remove_user_data(userid: int) -> bool:
+    pool = get_pool()
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            try:
+                # Delete user's data from all relevant tables
+                cur.execute("""
+                    DELETE FROM users
+                    WHERE userid = %s
+                """, (userid,))
+                # You can add similar DELETE queries for other tables related to user data
+
+                conn.commit()
+                return True
+            except Exception as e:
+                print(f"Error removing user data: {e}")
+                return False
 
