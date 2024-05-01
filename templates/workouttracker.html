@@ -1,179 +1,113 @@
 {% extends "_layout.html" %}
 
 {% block content %}
-<h1 class="text-4xl font-bold text-gray-800 mb-4">Workout Log Form</h1>
+<div class="flex">
+  <!-- Left side content -->
+  <div class="flex-1">
+    <h1 class="text-4xl font-bold text-gray-800 mb-4">Workout Log Form</h1>
+    <form action="{{ url_for('workouttracker') }}" method="post">
+      <label for="start-time">Start Time:</label><br>
+      <input type="time" id="start-time" name="start-time" required><br><br>
 
-<form action="{{ url_for('workouttracker') }}" method="post">
+      <label for="end-time">End Time:</label><br>
+      <input type="time" id="end-time" name="end-time" required><br><br>
 
-  <label for="start-time">Start Time:</label><br>
-  <input type="time" id="start-time" name="start-time" required><br><br>
+      <!-- Container for dynamically loaded exercises -->
+      <div id="exerciseContainer"></div>
 
-  <label for="end-time">End Time:</label><br>
-  <input type="time" id="end-time" name="end-time" required><br><br>
-
-  <!-- Container for dynamically loaded exercises -->
-  <div id="exerciseContainer"></div>
-
-  <div class="flex justify-start">
-    <div class="w-full" style="max-width: 250px;"> <!-- Smaller max-width -->
-      <div class="bg-white shadow-xl rounded px-8 pt-6 pb-8 mb-4"
-        style="border-top: 2px solid rgba(0, 0, 0, 0.05); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);">
-        <!-- Updated div for vertically listed text buttons -->
-        <div class="flex flex-col items-center">
-          {% for section in ['Chest', 'Back', 'Arms', 'Legs'] %}
-          <button onclick="loadExercises('{{ section|lower }}')"
-            class="text-lg font-semibold text-gray-800 bg-white hover:bg-gray-100 py-2 px-4 rounded shadow mb-2 w-full">
-            {{ section }} Exercises
-          </button>
-          {% endfor %}
-        </div>
-        <!-- Div for exercise display and search functionality -->
-        <div class="exercise-display mt-4">
-          <!-- Search bar for exercises, initially hidden -->
-          <input type="text" id="exerciseSearchInput" placeholder="Search exercises..."
-            class="hidden w-full p-2 border border-gray-300 rounded mb-4">
-          <!-- Container where exercises will be displayed -->
-          <div id="exercisesList">
-            <!-- Dynamic content will be loaded here -->
+      <div class="flex justify-start">
+        <div class="w-full" style="max-width: 250px;"> <!-- Smaller max-width -->
+          <div class="bg-white shadow-xl rounded px-8 pt-6 pb-8 mb-4"
+            style="border-top: 2px solid rgba(0, 0, 0, 0.05); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);">
+            <!-- Updated div for vertically listed text buttons -->
+            <div class="flex flex-col items-center">
+              {% for section in ['Chest', 'Back', 'Arms', 'Legs'] %}
+              <button onclick="loadExercises('{{ section|lower }}')"
+                class="text-lg font-semibold text-gray-800 bg-white hover:bg-gray-100 py-2 px-4 rounded shadow mb-2 w-full">
+                {{ section }} Exercises
+              </button>
+              {% endfor %}
+            </div>
+            <!-- Div for exercise display and search functionality -->
+            <div class="exercise-display mt-4">
+              <!-- Search bar for exercises, initially hidden -->
+              <input type="text" id="exerciseSearchInput" placeholder="Search exercises..."
+                class="hidden w-full p-2 border border-gray-300 rounded mb-4">
+              <!-- Container where exercises will be displayed -->
+              <div id="exercisesList">
+                <!-- Dynamic content will be loaded here -->
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <input type="submit" value="Submit">
+    </form>
   </div>
 
 
-  <style>
-    /* General styles for the exercise display area */
-    .exercise-display {
-      margin-top: 20px;
+  <!-- Right side content - Exercise Log Table -->
+  <div class="flex-1">
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Exercise Log</h2>
+    <table id="exerciseTable" class="w-full">
+      <thead>
+        <tr>
+          <th>Exercise</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows added dynamically here -->
+      </tbody>
+    </table>
+  </div>
+</div>
+<!-- Exercise Log Table -->
+
+<script>
+  // Display || API parameters
+  const muscleMap = {
+    "chest": "chest",
+    "back": "back",
+    "arms": ["lower arms", "upper arms"],
+    "legs": ["lower legs", "upper legs"]
+  };
+
+  function loadExercises(muscle) {
+    const exercisesContainer = document.querySelector('#exercisesList');
+    const searchBar = document.querySelector('#exerciseSearchInput');
+    exercisesContainer.innerHTML = '';  // Clear previous exercises
+    searchBar.classList.remove('hidden');  // Show the search bar
+
+    const apiMuscles = muscleMap[muscle.toLowerCase()];
+    if (Array.isArray(apiMuscles)) {
+      apiMuscles.forEach(apiMuscle => {
+        fetchExerciseData(apiMuscle);
+      });
+    } else {
+      fetchExerciseData(apiMuscles);
     }
+  }
 
-    .exercise-container {
-      cursor: pointer;
-      padding: 10px;
-      border-bottom: 1px solid #ccc;
-      background-color: #f9f9f9;
-      transition: background-color 0.3s, box-shadow 0.3s;
-    }
+  function fetchExerciseData(apiMuscle) {
+    fetch('/exercises/' + apiMuscle)
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);  // Log the data to inspect its structure
+        processExerciseData(apiMuscle, data);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  }
 
-    .exercise-container:hover {
-      background-color: #e9e9e9;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
+  function processExerciseData(muscle, data) {
+    const exercisesContainer = document.querySelector('#exercisesList');
+    let htmlContent = `<h2 style="text-transform: capitalize; font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 20px;">${muscle} Exercises</h2>`;
+    data.exercises.forEach(exercise => {
+      const gifUrl = exercise.gifUrl || '/static/images/placeholder.gif'; // Use a placeholder if no GIF is provided
 
-    .exercise-detail {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      overflow: hidden;
-      height: 0;
-      transition: height 0.8s ease-in-out, padding 0.8s ease-in-out;
-      padding: 0 10px;
-    }
-
-    .exercise-container.active .exercise-detail {
-      padding: 10px;
-    }
-
-    .exercise-container img {
-      max-width: 100%;
-      height: auto;
-    }
-
-    .exercise-container h3 {
-      margin: 0;
-      color: #333;
-      font-size: 18px;
-    }
-
-    .exercise-container p {
-      color: #666;
-      font-size: 16px;
-      line-height: 1.4;
-    }
-
-    .exercise-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    #exercisesList {
-      max-height: 400px;
-      /* Adjust based on your design needs */
-      overflow-y: auto;
-      /* Enables vertical scrolling */
-      width: 100%;
-      /* Ensures it fills the container */
-      border: 1px solid #ccc;
-      /* Optional: adds a border for better visual separation */
-    }
-
-    .add-exercise-btn {
-      padding: 8px 16px;
-      background-color: #4CAF50;
-      /* Green background */
-      color: white;
-      /* White text */
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    .add-exercise-btn:hover {
-      background-color: #45a049;
-      /* Darker green background on hover */
-    }
-  </style>
-
-
-
-  <script>
-    // Display || API parameters
-    const muscleMap = {
-      "chest": "chest",
-      "back": "back",
-      "arms": ["lower arms", "upper arms"],
-      "legs": ["lower legs", "upper legs"]
-    };
-
-    function loadExercises(muscle) {
-      const exercisesContainer = document.querySelector('#exercisesList');
-      const searchBar = document.querySelector('#exerciseSearchInput');
-      exercisesContainer.innerHTML = '';  // Clear previous exercises
-      searchBar.classList.remove('hidden');  // Show the search bar
-
-      const apiMuscles = muscleMap[muscle.toLowerCase()];
-      if (Array.isArray(apiMuscles)) {
-        apiMuscles.forEach(apiMuscle => {
-          fetchExerciseData(apiMuscle);
-        });
-      } else {
-        fetchExerciseData(apiMuscles);
-      }
-    }
-
-    function fetchExerciseData(apiMuscle) {
-      fetch('/exercises/' + apiMuscle)
-        .then(response => response.json())
-        .then(data => {
-          console.log(data);  // Log the data to inspect its structure
-          processExerciseData(apiMuscle, data);
-        })
-        .catch(error => {
-          console.error('Error:', error);
-        });
-    }
-
-    function processExerciseData(muscle, data) {
-      const exercisesContainer = document.querySelector('#exercisesList');
-      let htmlContent = `<h2 style="text-transform: capitalize; font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 20px;">${muscle} Exercises</h2>`;
-      data.exercises.forEach(exercise => {
-        const gifUrl = exercise.gifUrl || '/static/images/placeholder.gif'; // Use a placeholder if no GIF is provided
-
-        htmlContent += `
+      htmlContent += `
     <div class="exercise-container">
         <h3><strong>${toTitleCase(exercise.name)}</strong></h3>
         <div class="exercise-detail">
@@ -182,60 +116,185 @@
         <button type="button" class="add-exercise-btn">Add</button>
     </div>
 `;
-      });
-      exercisesContainer.innerHTML = htmlContent;
-      setupExerciseContainerToggle(); // Setup functionality for showing and hiding details
-    }
-
-
-    function toTitleCase(str) {
-      return str.replace(/\w\S*/g, function (txt) {
-        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-      });
-    }
-
-    function setupExerciseContainerToggle() {
-      document.querySelectorAll('.exercise-container').forEach(container => {
-        // Listen for clicks on the container, but not on the button
-        container.addEventListener('click', function (event) {
-          if (event.target.classList.contains('add-exercise-btn')) {
-            return; // If the "Add" button was clicked, do nothing
-          }
-          const detail = this.querySelector('.exercise-detail');
-          if (detail.style.height && detail.style.height !== '0px') {
-            detail.style.height = '0px'; // Collapse the panel
-          } else {
-            detail.style.height = detail.scrollHeight + 'px'; // Expand the panel
-          }
-        });
-      });
-    }
-
-    // Prevent the click on the "Add" button from propagating
-    document.querySelectorAll('.add-exercise-btn').forEach(button => {
-      button.addEventListener('click', function (event) {
-        event.stopPropagation(); // Stop the event from bubbling up to the parent
-        // Add additional functionality for what happens when "Add" is clicked
-      });
     });
+    exercisesContainer.innerHTML = htmlContent;
+    setupExerciseContainerToggle(); // Setup functionality for showing and hiding details
+  }
 
 
-    document.getElementById('exerciseSearchInput').addEventListener('input', function (e) {
-      const searchValue = e.target.value.toLowerCase();
-      const exerciseElements = document.querySelectorAll('.exercise-container');
-      exerciseElements.forEach(el => {
-        const title = el.querySelector('h3').textContent.toLowerCase();
-        if (title.includes(searchValue)) {
-          el.style.display = '';
+  function toTitleCase(str) {
+    return str.replace(/\w\S*/g, function (txt) {
+      return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
+  }
+
+  function setupExerciseContainerToggle() {
+    document.querySelectorAll('.exercise-container').forEach(container => {
+      // Listen for clicks on the container, but not on the button
+      container.addEventListener('click', function (event) {
+        if (event.target.classList.contains('add-exercise-btn')) {
+          return; // If the "Add" button was clicked, do nothing
+        }
+        const detail = this.querySelector('.exercise-detail');
+        if (detail.style.height && detail.style.height !== '0px') {
+          detail.style.height = '0px'; // Collapse the panel
         } else {
-          el.style.display = 'none';
+          detail.style.height = detail.scrollHeight + 'px'; // Expand the panel
         }
       });
     });
-  </script>
+  }
 
+  document.getElementById('exerciseSearchInput').addEventListener('input', function (e) {
+    const searchValue = e.target.value.toLowerCase();
+    const exerciseElements = document.querySelectorAll('.exercise-container');
+    exerciseElements.forEach(el => {
+      const title = el.querySelector('h3').textContent.toLowerCase();
+      if (title.includes(searchValue)) {
+        el.style.display = '';
+      } else {
+        el.style.display = 'none';
+      }
+    });
+  });
 
-  <input type="submit" value="Submit">
-</form>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Attach event listener to the body or a static parent element
+    document.body.addEventListener('click', function (event) {
+      if (event.target.classList.contains('add-exercise-btn')) {
+        event.stopPropagation();  // Stop the event from bubbling up to the parent
+
+        const exerciseContainer = event.target.closest('.exercise-container');
+        const exerciseName = exerciseContainer.querySelector('h3').textContent;
+
+        // Call the function to add this exercise to the log table
+        addToExerciseLog(exerciseName);
+      }
+    });
+  });
+
+  function addToExerciseLog(name) {
+    const tableBody = document.querySelector('#exerciseTable tbody');
+
+    // Check if the exercise is already added
+    const existingEntries = Array.from(tableBody.querySelectorAll('tr')).map(row => row.querySelector('td').textContent.trim());
+    if (existingEntries.includes(name)) {
+      console.log('This exercise has already been added.');  // Use console.log for debugging
+      return; // Stop adding if it's a duplicate
+    }
+
+    // Create a new row and cell for the exercise name
+    const row = document.createElement('tr');
+    const nameCell = document.createElement('td');
+    nameCell.textContent = name;
+    row.appendChild(nameCell);  // Append the cell to the row
+
+    tableBody.appendChild(row);  // Append the row to the table body
+  }
+</script>
+
+<style>
+  /* General styles for the exercise display area */
+  .exercise-display {
+    margin-top: 20px;
+  }
+
+  .exercise-container {
+    cursor: pointer;
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+    background-color: #f9f9f9;
+    transition: background-color 0.3s, box-shadow 0.3s;
+  }
+
+  .exercise-container:hover {
+    background-color: #e9e9e9;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .exercise-detail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+    height: 0;
+    transition: height 0.8s ease-in-out, padding 0.8s ease-in-out;
+    padding: 0 10px;
+  }
+
+  .exercise-container.active .exercise-detail {
+    padding: 10px;
+  }
+
+  .exercise-container img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .exercise-container h3 {
+    margin: 0;
+    color: #333;
+    font-size: 18px;
+  }
+
+  .exercise-container p {
+    color: #666;
+    font-size: 16px;
+    line-height: 1.4;
+  }
+
+  .exercise-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  #exercisesList {
+    max-height: 400px;
+    /* Adjust based on your design needs */
+    overflow-y: auto;
+    /* Enables vertical scrolling */
+    width: 100%;
+    /* Ensures it fills the container */
+    border: 1px solid #ccc;
+    /* Optional: adds a border for better visual separation */
+  }
+
+  .add-exercise-btn {
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    /* Green background */
+    color: white;
+    /* White text */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  .add-exercise-btn:hover {
+    background-color: #45a049;
+    /* Darker green background on hover */
+  }
+
+  .flex {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .flex-1 {
+    flex: 1;
+    min-width: 300px;
+    /* Adjust this value based on your layout needs */
+    padding: 20px;
+  }
+
+  #exerciseTable {
+    width: 100%;
+    overflow-x: auto;
+  }
+</style>
+
 
 {% endblock %}
