@@ -9,7 +9,7 @@ from botocore.exceptions import NoCredentialsError
 from werkzeug.utils import secure_filename
 import boto3
 import requests 
-from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros, save_target
+from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros, save_target, clear_logs
 # from database.workouttracker import get_all_workoutlogs, insert_workout_log
 from flask_sqlalchemy import SQLAlchemy
 
@@ -157,7 +157,20 @@ def macrotracker():
         progress_carbs = calculate_progress(total_carbs, targets['carbs'])
         progress_fats = calculate_progress(total_fats, targets['fats'])
     
-    
+    # Check if targets are set and if each macro's total is greater than or equal to its target
+    if targets:
+        if total_calories >= float(targets['calories']):
+            flash('Congrats! You hit your calorie goal for today', 'success')
+
+        if total_protein >= float(targets['protein']):
+            flash('Congrats! You hit your protein goal for today', 'success')
+
+        if total_carbs >= float(targets['carbs']):
+            flash('Congrats! You hit your carbs goal for today', 'success')
+
+        if total_fats >= float(targets['fats']):
+            flash('Congrats! You hit your fats goal for today', 'success')
+                
     return render_template('macrotracker.html',
                        all_breakfast_macros=all_breakfast_macros,
                        all_lunch_macros=all_lunch_macros,
@@ -182,6 +195,7 @@ def macrotracker():
                            progress_calories=progress_calories, progress_protein=progress_protein, progress_carbs=progress_carbs, progress_fats=progress_fats)
 
 # Define the route for the Targets page
+
 @app.route('/targets', methods=['GET', 'POST'])
 def save_targets():
     if 'userid' not in session:
@@ -210,33 +224,60 @@ def save_targets():
 
     return render_template('targets.html')
 
+@app.route('/clear_breakfast_logs', methods=['POST'])
+def clear_breakfast_logs_route():
+    if clear_logs("Breakfast"):
+        flash('Breakfast logs cleared successfully', 'info')
+    else:
+        flash('Failed to clear breakfast logs', 'error')
+    return redirect(url_for('macrotracker'))
+
+@app.route('/clear_lunch_logs', methods=['POST'])
+def clear_lunch_logs_route():
+    if clear_logs("Lunch"):
+        flash('Lunch logs cleared successfully', 'info')
+    else:
+        flash('Failed to clear lunch logs', 'error')
+    return redirect(url_for('macrotracker'))
+
+@app.route('/clear_dinner_logs', methods=['POST'])
+def clear_dinner_logs_route():
+    if clear_logs("Dinner"):
+        flash('Dinner logs cleared successfully', 'info')
+    else:
+        flash('Failed to clear dinner logs', 'error')
+    return redirect(url_for('macrotracker'))
+
+@app.route('/clear_snack_logs', methods=['POST'])
+def clear_snack_logs_route():
+    if clear_logs("Snack"):
+        flash('Snack logs cleared successfully', 'info')
+    else:
+        flash('Failed to clear snack logs', 'error')
+    return redirect(url_for('macrotracker'))
 
 @app.route('/workouttracker', methods=['GET', 'POST'])
 def workouttracker():
     if 'userid' not in session:
-        flash('You need to log in to use the workout tracker.', 'error')
-        return redirect('/login')
-    
-    workout_logs = None  
-
+            flash('You need to log in to use the workout tracker.', 'error')
+            return redirect('/login')
+        
     if request.method == 'POST':
         userid = session['userid']
-        workoutid = request.form.get('workoutid')
-        workouttype = request.form.get('workout-type')
-        starttime = request.form.get('start-time')
-        endtime = request.form.get('end-time')
+        exercise_name = request.form['exerciseName']
+        equipment = request.form['equipment']
+        target_muscle = request.form['targetMuscle']
+        duration = request.form['duration']
+        start_time = request.form['startDateTime']
+        end_time = request.form['endDateTime']
+
+        insert_workout_log(userid, exercise_name, equipment, target_muscle, duration, start_time, end_time, get_pool()) 
     
-        workout_logs = insert_workout_log(userid, workoutid, workouttype, starttime, endtime)
-        if not workout_logs:
-            print('No workout logs found.')
+    
+    workout_logs = get_workout_logs(get_pool())
     
     return render_template('workouttracker.html', workout_logs=workout_logs)
 
-
-
-
-
-    
 
 @app.get('/forum')
 def forum():
@@ -580,8 +621,6 @@ def exercises(muscle):
     except Exception as e:
 #        print(f"Error: {e}")  # Console log for the error
         return jsonify({'error': str(e)}), 500
-
-
 
 # End Exercises API
 

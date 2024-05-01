@@ -59,3 +59,19 @@ def save_target(userid: int, target_caloriesconsumed: float, target_proteinconsu
                         """, (target_caloriesconsumed, target_proteinconsumed, target_carbsconsumed, target_fatsconsumed, userid))
             conn.commit()
             return cur.rowcount > 0
+        
+def clear_logs(meal_type):
+    try:
+        pool = get_pool()  # Assuming you have a function to get the database connection pool
+        with pool.connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                               DELETE FROM macrotracker
+                               WHERE meal_type = %s
+                               """, (meal_type,))
+                conn.commit()
+        return True  # Return True if deletion was successful
+    except Exception as e:
+        print("Error:", e)
+        return False  # Return False if there was an error
+
