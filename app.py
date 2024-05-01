@@ -15,7 +15,9 @@ from werkzeug.utils import secure_filename
 import boto3
 import requests 
 import secrets
-from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros, save_target
+from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros, save_target, clear_logs
+# from database.workouttracker import get_all_workoutlogs, insert_workout_log
+from flask_sqlalchemy import SQLAlchemy
 
 
 load_dotenv()
@@ -87,6 +89,24 @@ def secret():
     user = fitness_repo.get_user_by_id(userid)
     return render_template('secret.html', user=user)
 
+
+def calculate_progress(total, target):
+    # Ensure target is a float
+    if isinstance(target, str):
+        target = float(target)
+    
+    # Calculate progress
+    if target == 0:
+        return 0
+    progress = min(total / target * 100, 100)
+    
+    # Round the progress to the nearest integer
+    progress = round(progress)
+    
+    return progress
+
+
+
 @app.route('/macrotracker', methods=['GET', 'POST'])
 def macrotracker():
     if 'userid' not in session:
@@ -94,15 +114,7 @@ def macrotracker():
         return redirect('/login')
 
     userid = session['userid']
-    targets = session.get(f'targets_{userid}', None)
-
-    """
-    target_caloriesconsumed = session.get('target_caloriesconsumed', None)
-    target_proteinconsumed = session.get('target_proteinconsumed', None)
-    target_carbsconsumed = session.get('target_carbsconsumed', None)
-    target_fatsconsumed = session.get('target_fatsconsumed', None)
-    """
-    
+    targets = session.get(f'targets_{userid}', None)    
 
     if request.method == 'POST':
         # Retrieve form data
@@ -165,7 +177,33 @@ def macrotracker():
                        total_dinner_carbs + total_snack_carbs)
     total_fats = (total_breakfast_fats + total_lunch_fats +
                       total_dinner_fats + total_snack_fats)
-      
+    
+    
+    progress_calories = None
+    progress_protein = None
+    progress_carbs = None
+    progress_fats = None
+
+    if targets:
+        progress_calories = calculate_progress(total_calories, targets['calories'])
+        progress_protein = calculate_progress(total_protein, targets['protein'])
+        progress_carbs = calculate_progress(total_carbs, targets['carbs'])
+        progress_fats = calculate_progress(total_fats, targets['fats'])
+    
+    # Check if targets are set and if each macro's total is greater than or equal to its target
+    if targets:
+        if total_calories >= float(targets['calories']):
+            flash('Congrats! You hit your calorie goal for today', 'success')
+
+        if total_protein >= float(targets['protein']):
+            flash('Congrats! You hit your protein goal for today', 'success')
+
+        if total_carbs >= float(targets['carbs']):
+            flash('Congrats! You hit your carbs goal for today', 'success')
+
+        if total_fats >= float(targets['fats']):
+            flash('Congrats! You hit your fats goal for today', 'success')
+                
     return render_template('macrotracker.html',
                        all_breakfast_macros=all_breakfast_macros,
                        all_lunch_macros=all_lunch_macros,
@@ -186,9 +224,11 @@ def macrotracker():
                            total_snack_protein=total_snack_protein,
                            total_snack_carbs=total_snack_carbs,
                            total_snack_fats=total_snack_fats,
-                           total_calories=total_calories,total_protein=total_protein,total_fats=total_fats,total_carbs=total_carbs, targets=targets)
+                           total_calories=total_calories,total_protein=total_protein,total_fats=total_fats,total_carbs=total_carbs, targets=targets,
+                           progress_calories=progress_calories, progress_protein=progress_protein, progress_carbs=progress_carbs, progress_fats=progress_fats)
 
 # Define the route for the Targets page
+
 @app.route('/targets', methods=['GET', 'POST'])
 def save_targets():
     if 'userid' not in session:
@@ -217,7 +257,60 @@ def save_targets():
 
     return render_template('targets.html')
 
+@app.route('/clear_breakfast_logs', methods=['POST'])
+def clear_breakfast_logs_route():
+    if clear_logs("Breakfast"):
+        flash('Breakfast logs cleared successfully', 'info')
+    else:
+        flash('Failed to clear breakfast logs', 'error')
+    return redirect(url_for('macrotracker'))
+
+@app.route('/clear_lunch_logs', methods=['POST'])
+def clear_lunch_logs_route():
+    if clear_logs("Lunch"):
+        flash('Lunch logs cleared successfully', 'info')
+    else:
+        flash('Failed to clear lunch logs', 'error')
+    return redirect(url_for('macrotracker'))
+
+@app.route('/clear_dinner_logs', methods=['POST'])
+def clear_dinner_logs_route():
+    if clear_logs("Dinner"):
+        flash('Dinner logs cleared successfully', 'info')
+    else:
+        flash('Failed to clear dinner logs', 'error')
+    return redirect(url_for('macrotracker'))
+
+@app.route('/clear_snack_logs', methods=['POST'])
+def clear_snack_logs_route():
+    if clear_logs("Snack"):
+        flash('Snack logs cleared successfully', 'info')
+    else:
+        flash('Failed to clear snack logs', 'error')
+    return redirect(url_for('macrotracker'))
+
+@app.route('/workouttracker', methods=['GET', 'POST'])
+def workouttracker():
+    if 'userid' not in session:
+            flash('You need to log in to use the workout tracker.', 'error')
+            return redirect('/login')
+        
+    if request.method == 'POST':
+        userid = session['userid']
+        exercise_name = request.form['exerciseName']
+        equipment = request.form['equipment']
+        target_muscle = request.form['targetMuscle']
+        duration = request.form['duration']
+        start_time = request.form['startDateTime']
+        end_time = request.form['endDateTime']
+
+        insert_workout_log(userid, exercise_name, equipment, target_muscle, duration, start_time, end_time, get_pool()) 
     
+    
+    workout_logs = get_workout_logs(get_pool())
+    
+    return render_template('workouttracker.html', workout_logs=workout_logs)
+
 
 @app.get('/forum')
 def forum():
@@ -936,11 +1029,14 @@ def inject_logged_in():
 # Exercises API
 def get_exercises_by_muscle(muscle):
     url = "https://exercisedb.p.rapidapi.com/exercises/bodyPart/" + muscle
+
+    querystring = {"limit":"200"} # High number to get the max amount out of the API
+
     headers = {
         'x-rapidapi-host': "exercisedb.p.rapidapi.com",
         'x-rapidapi-key': os.getenv('EXERCISE_DB_API_KEY')
     }
-    response = requests.request("GET", url, headers=headers)
+    response = requests.request("GET", url, headers=headers, params=querystring)
     return response.json()
 
 def search_youtube(query):
@@ -956,16 +1052,14 @@ def search_youtube(query):
 
 @app.route('/exercises/<muscle>')
 def exercises(muscle):
-    print(f"Fetching exercises for muscle: {muscle}")  # Console log
+#    print(f"Fetching exercises for muscle: {muscle}")  # Console log
     try:
         exercises = get_exercises_by_muscle(muscle)
         videos = search_youtube(muscle + ' exercises')
         return jsonify({'exercises': exercises, 'videos': videos})
     except Exception as e:
-        print(f"Error: {e}")  # Console log for the error
+#        print(f"Error: {e}")  # Console log for the error
         return jsonify({'error': str(e)}), 500
-
-
 
 # End Exercises API
 
@@ -973,3 +1067,4 @@ def exercises(muscle):
 if __name__ == "__main__":
     app.run(debug=True) 
 
+# Forum Porting

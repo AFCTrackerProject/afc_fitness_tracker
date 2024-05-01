@@ -59,7 +59,6 @@ def get_user_by_username(username: str) -> dict[str, Any]:
                 return None  
             return user
 
-
 def submit_question(username: str, weight: float, height: float, gender: str, dateofbirth: str) -> bool:
     pool = get_pool()
     try:

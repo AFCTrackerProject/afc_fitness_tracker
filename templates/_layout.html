@@ -15,6 +15,19 @@
  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" integrity="sha512-apX8rFN/KxJW8rniQbkvzrshQ3KvyEH+4szT3Sno5svdr6E/CP0QE862yEeLBMUnCqLko8QaugGkzvWS7uNfFQ==" crossorigin="anonymous">
  <script src="https://cdn.tailwindcss.com/3.4.1?plugins=forms,typography,aspect-ratio,line-clamp"></script>
  <title>Fitness Tracker</title>
+ <style>
+   .profile-btn {
+      margin-left: 10px;
+   }
+   .logout-btn {
+      margin-left: 5px; /* Adjusted margin here */
+      vertical-align: middle;
+   }
+   .buttons-container {
+      display: flex;
+      align-items: center;
+   }
+ </style>
 </head>
 <body>
 <span>:::::::</span>
@@ -28,17 +41,19 @@
       <a href="/macrotracker" class="text-gray-500 mx-2 hover:text-indigo-600">Macro Tracker</a>
       <a href="/forum" class="text-gray-500 mx-2 hover:text-indigo-600">Forum</a>
       <a href="/about" class="text-gray-500 mx-2 hover:text-indigo-600">About Us</a>
-      <a href="/profile" class="text-gray-500 mx-2 hover:text-indigo-600">Profile</a>
       <a href="/finder.html" class="text-gray-500 mx-2 hover:text-indigo-600">FitnessFinder</a>
       <a href="/chatbot.html" class="text-gray-500 mx-2 hover:text-indigo-600">Chatbot</a>
-
+      <a href="/workouttracker" class="text-gray-500 mx-2 hover:text-indigo-600">Workout Tracker</a>
   </div>
-  <div>
+  <div class="buttons-container">
     {% if logged_in %}
         <form action="/logout" method="post">
-            <button type="submit" class="inline-block bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Log out</button>
+            <button type="submit" class="inline-block bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded logout-btn">Log out</button>
         </form>
+        <!-- Profile icon button -->
+        
     {% endif %}
+        <a href="/profile" class="text-gray-500 mx-2 hover:text-indigo-600 profile-btn"><i class="fas fa-user"></i></a>
 </div>
 </nav>
 
