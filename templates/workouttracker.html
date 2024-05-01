@@ -5,43 +5,48 @@
 
 <form action="{{ url_for('workouttracker') }}" method="post">
 
-<label for="workout-id">Workout ID</label><br>
-<input type="workoutid" id="workoutid" name="workoutid" required><br><br>
+<label for="exerciseName">Exercise Name:</label><br>
+<input type="text" id="exerciseName" name="exerciseName" required><br><br>
 
-<label for="start-time">Start Time:</label><br>
-<input type="time" id="start-time" name="start-time" required><br><br>
+<label for="equipment">Equipment:</label><br>
+<input type="text" id="equipment" name="equipment" required><br><br>
+
+<label for="targetMuscle">Target Muscle:</label><br>
+<input type="text" id="targetMuscle" name="targetMuscle" required><br><br>
+  
+<label for="duration">Duration (minutes):</label><br>
+<input type="number" id="duration" name="duration" required><br><br>
+
+<label for="startDateTime">Start Time:</label><br>
+<input type="time" id="startDateTime" name="startDateTime" required><br><br>
     
-<label for="end-time">End Time:</label><br>
-<input type="time" id="end-time" name="end-time" required><br><br>
+<label for="endDateTime">End Time:</label><br>
+<input type="time" id="endDateTime" name="endDateTime" required><br><br>
 
-  <label for="workout-type">Workout Type:</label><br>
-  <input type="radio" id="chest" name="workout-type" value="Chest">
-  <label for="chest">Chest</label><br>
-  <input type="radio" id="arms" name="workout-type" value="Arms">
-  <label for="arms">Arms</label><br>
-  <input type="radio" id="back" name="workout-type" value="Back">
-  <label for="back">Back</label><br>
-  <input type="radio" id="legs" name="workout-type" value="Legs">
-  <label for="legs">Legs</label><br>
-  <input type="radio" id="cardio" name="workout-type" value="Cardio">
-  <label for="cardio">Cardio</label><br>
-
-  <input type="submit" value="Submit">
+<input type="submit" value="Submit">
 </form> 
 
 <h2>Workout Log Table</h2>
 
 <table>
   <tr>
+    <th>Exercise Name</th>
+    <th>Equipment</th>
+    <th>Target Muscle</th>
+    <th>Duration (minutes)</th>
     <th>Start Time</th>
     <th>End Time</th>
-    <th>Workout Type</th>
   </tr>
+  {% for log in workout_logs %}
   <tr>
-    <td>{{ start_time }}</td>
-    <td>{{ end_time }}</td>
-    <td>{{ workout_type }}</td>
+    <td>{{ log.ExerciseName }}</td>
+    <td>{{ log.Equipment }}</td>
+    <td>{{ log.TargetMuscle }}</td>
+    <td>{{ log.Duration }}</td>
+    <td>{{ log.StartDateTime }}</td>
+    <td>{{ log.EndDateTime }}</td>
   </tr>
+  {% endfor %}
 </table>
 
 {% endblock %}
