@@ -12,9 +12,10 @@ CREATE TABLE Users (
     Gender VARCHAR(10) CHECK (Gender IN ('Male', 'Female', 'Other')),
     Height FLOAT,
     Weight FLOAT,
-    JoinDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    confirmation_token VARCHAR(255)
-    profilepicture VARCHAR(255)
+    JoinDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    confirmation_token VARCHAR(255),
+    profilepicture VARCHAR(255),
+    confirmation_token_fp VARCHAR(255)
 );
 
 -- User Stats Table
@@ -60,6 +61,6 @@ CREATE TABLE MacroTracker (
     Target_caloriesconsumed FLOAT,
     Target_proteinconsumed FLOAT,
     Target_carbsconsumed FLOAT,
-    Target_fatconsumed FLOAT
+    Target_fatconsumed FLOAT,
     FOREIGN KEY (UserID) REFERENCES Users(UserID)
 );
