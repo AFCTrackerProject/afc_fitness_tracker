@@ -123,6 +123,10 @@
 </style>
 
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeStarIcons();
+    });
+    
     // Display || API parameters
     const muscleMap = {
         "chest": "chest",
@@ -166,12 +170,12 @@
         const instructions = exercise.instructions || 'No instructions provided.';
         const gifUrl = exercise.gifUrl || '/static/images/placeholder.gif'; // Placeholder if no GIF
         const isFavorite = exercise.isFavorite; // This should be returned by your backend
-
+        
         htmlContent += `
 <div class="exercise-container">
     <div class="exercise-header">
         <h3><strong>${toTitleCase(exercise.name)}</strong></h3>
-        <i class="${isFavorite ? 'fas' : 'far'} fa-star favorite-btn" onclick="toggleFavorite(this, '${exercise.name.replace("'", "\\'")}')"></i>
+        <i class="${isFavorite ? 'fas' : 'far'} fa-star favorite-btn" data-workout-name="${exercise.name}" onclick="toggleFavorite(this, '${exercise.name.replace("'", "\\'")}')"></i>
     </div>
     <div class="exercise-detail">
         <img src="${gifUrl}" alt="Exercise GIF" style="display: block; margin-left: auto; margin-right: auto; height: auto; border: 2px solid black; margin-bottom: 20px;">
@@ -219,37 +223,52 @@
         });
     });
 
-    function toggleFavorite(element, exerciseName) {
-        element.classList.toggle('fas'); // Toggle filled star class
-        element.classList.toggle('far'); // Toggle empty star class
+function toggleFavorite(element, workoutName) {
+    element.classList.toggle('fas');
+    element.classList.toggle('far');
+    
+    const isFavorite = element.classList.contains('fas');
+    
+    // Send workout name to server
+    sendFavoriteWorkoutToServer(workoutName, isFavorite);
 
-        // Depending on current status, update server
-        const isFavorite = element.classList.contains('fas'); // Check if it's now a favorite
+    updateLocalStorage(workoutName, isFavorite);
+}
 
-        fetch('/toggle_favorite', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ exerciseName, isFavorite })
+function updateLocalStorage(workoutName, isFavorite) {
+    let favoriteWorkouts = JSON.parse(localStorage.getItem('favoriteWorkouts')) || {};
+    favoriteWorkouts[workoutName] = isFavorite;
+    localStorage.setItem('favoriteWorkouts', JSON.stringify(favoriteWorkouts));
+}
+
+function initializeStarIcons() {
+    let favoriteWorkouts = JSON.parse(localStorage.getItem('favoriteWorkouts')) || {};
+    const starIcons = document.querySelectorAll('.favorite-btn');
+
+    starIcons.forEach(icon => {
+        const workoutName = icon.dataset.workoutName;
+        if (workoutName && favoriteWorkouts[workoutName]) {
+                icon.classList.add('fas');
+        }
+    });
+}
+
+function sendFavoriteWorkoutToServer(workoutName, isFavorite) {
+    fetch('/toggle_favorite', {  // Update the endpoint to match the server
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+            body: JSON.stringify({ workoutName, isFavorite })
         })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success) {
-                    // If the server toggling failed, revert the icon change
-                    element.classList.toggle('fas');
-                    element.classList.toggle('far');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // In case of error, revert the icon change
-                element.classList.toggle('fas');
-                element.classList.toggle('far');
-            });
+        .then(response => response.json())
+        .then(data => {
+            console.log('Favorite workout updated on server:', data);
+        })
+        .catch(error => {
+            console.error('Error updating favorite workout on server:', error);
+        });
     }
-
-
 </script>
 
 {% endblock %}
