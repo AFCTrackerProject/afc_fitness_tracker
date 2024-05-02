@@ -378,14 +378,46 @@ def clear_snack_logs_route():
         flash('Failed to clear snack logs', 'error')
     return redirect(url_for('macrotracker'))
 
-@app.get('/workouttracker')
+@app.route('/workouttracker', methods=['GET', 'POST'])
 def workouttracker():
     if 'userid' not in session:
-            flash('You need to log in to use the workout tracker.', 'error')
-            return redirect('/login')  
-    if 'userid' in session:
-        user = fitness_repo.get_user_by_id(session['userid'])
-    return render_template('workouttracker.html', user=user)
+        flash('You need to log in to use the workout tracker.', 'error')
+        return redirect('/login')  
+
+    if request.method == 'POST':
+        userid = session.get('userid')
+        exercisename = session.get('exercisename')
+        starttime = request.form.get('start-time')
+        endtime = request.form.get('end-time')
+        
+        if insert_workout_log(userid, starttime, endtime, exercisename):  
+            print(exercisename)
+
+    # Fetch workout logs from the database
+    workout_logs = get_workout_logs()  # Assuming 'pool' is your database connection pool
+
+    return render_template('workouttracker.html', workout_logs=workout_logs)
+
+@app.route('/add_exercise', methods=['POST'])
+def add_exercise():
+    exercisename = request.json.get('exercisename')
+    print('Received exercise name:', exercisename)
+    session['exercisename'] = exercisename  
+    return 'Exercise name received by Flask' 
+
+@app.route('/clear_workout_logs', methods=['POST'])
+def clear_workout_logs_route():
+    if request.method == 'POST':
+        # Get the user ID from the session or wherever you store it
+        userid = session.get('userid')
+        
+        # Clear the workout logs for the specified user ID
+        if clear_workout_logs(userid):
+            flash('Workout logs cleared successfully.', 'success')
+        else:
+            flash('Failed to clear workout logs.', 'error')
+    
+    return redirect(url_for('workouttracker'))
 
 @app.get('/contact')
 def contact():
