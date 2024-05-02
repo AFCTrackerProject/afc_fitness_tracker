@@ -17,6 +17,7 @@ import requests
 import secrets
 from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros, save_target, clear_logs
 # from database.workouttracker import get_all_workoutlogs, insert_workout_log
+import psycopg
 from flask_sqlalchemy import SQLAlchemy
 
 
@@ -24,7 +25,7 @@ load_dotenv()
 
 app = Flask(__name__)
 mail = Mail(app)
-sg = SendGridAPIClient(os.getenv('SGKEY'))
+sg = SendGridAPIClient(os.getenv('SENDGRIDKEY'))
 
 #client = Client("str", "str")
 
@@ -44,7 +45,7 @@ app.config['MAIL_SERVER'] = 'smtp.sendgrid.net'  # SMTP server for SendGrid
 app.config['MAIL_PORT'] = 587  # Port for TLS connections
 app.config['MAIL_USE_TLS'] = True  # Enable TLS encryption
 app.config['MAIL_USERNAME'] = 'apikey'  # SendGrid username
-app.config['MAIL_PASSWORD'] = os.getenv('SGKEY')  # SendGrid API key as password
+app.config['MAIL_PASSWORD'] = os.getenv('SENDGRIDKEY')  # SendGrid API key as password
 app.config['MAIL_DEFAULT_SENDER'] = 'camcope247@gmail.com'  # Your verified sender email address
 
 # Initialize Flask-Mail
@@ -1060,6 +1061,7 @@ def exercises(muscle):
     except Exception as e:
 #        print(f"Error: {e}")  # Console log for the error
         return jsonify({'error': str(e)}), 500
+
 
 # End Exercises API
 

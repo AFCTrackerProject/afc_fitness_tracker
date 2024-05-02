@@ -65,14 +65,16 @@
     }
 
     .exercise-detail {
-    display: flex;
-    flex-direction: column; /* Stack children vertically */
-    align-items: center; /* Center children horizontally */
-    overflow: hidden;
-    height: 0;
-    transition: height 0.8s ease-in-out, padding 0.8s ease-in-out;
-    padding: 0 10px;
-}
+        display: flex;
+        flex-direction: column;
+        /* Stack children vertically */
+        align-items: center;
+        /* Center children horizontally */
+        overflow: hidden;
+        height: 0;
+        transition: height 0.8s ease-in-out, padding 0.8s ease-in-out;
+        padding: 0 10px;
+    }
 
     .exercise-container.active .exercise-detail {
         padding: 10px;
@@ -94,6 +96,29 @@
         color: #666;
         font-size: 16px;
         line-height: 1.4;
+    }
+
+    .exercise-header {
+        display: flex;
+        justify-content: space-between;
+        /* Aligns items on the horizontal line, spacing them */
+        align-items: center;
+        /* Centers items vertically within the container */
+        margin-bottom: 10px;
+        /* Space between header and detail section */
+    }
+
+    .favorite-btn {
+        cursor: pointer;
+        color: gray;
+        /* Default color for non-favorite */
+        font-size: 24px;
+        /* Adjust size as necessary */
+    }
+
+    .favorite-btn.fas {
+        color: gold;
+        /* Color when favorited */
     }
 </style>
 
@@ -135,27 +160,32 @@
     }
 
     function processExerciseData(muscle, data) {
-        const exercisesContainer = document.querySelector('#exercisesList');
-        let htmlContent = `<h2 style="text-transform: capitalize; font-size: 24px; font-weight: bold;">${muscle} Exercises</h2>`;
-        data.exercises.forEach(exercise => {
-            // Checks to see if info from the API is being pulled
-            const instructions = exercise.instructions || 'No instructions provided.';
-            const gifUrl = exercise.gifUrl || '/static/images/placeholder.gif';  // Use a placeholder if no GIF is provided
+    const exercisesContainer = document.querySelector('#exercisesList');
+    let htmlContent = `<h2 style="text-transform: capitalize; font-size: 24px; font-weight: bold;">${muscle} Exercises</h2>`;
+    data.exercises.forEach(exercise => {
+        const instructions = exercise.instructions || 'No instructions provided.';
+        const gifUrl = exercise.gifUrl || '/static/images/placeholder.gif'; // Placeholder if no GIF
+        const isFavorite = exercise.isFavorite; // This should be returned by your backend
 
-            htmlContent += `
-    <div class="exercise-container">
+        htmlContent += `
+<div class="exercise-container">
+    <div class="exercise-header">
         <h3><strong>${toTitleCase(exercise.name)}</strong></h3>
-        <div class="exercise-detail">
-            <img src="${gifUrl}" alt="Exercise GIF" style="display: block; margin-left: auto; margin-right: auto; height: auto; border: 2px solid black; margin-bottom: 20px;">
-            <p>${exercise.instructions || 'No instructions provided.'}</p>
-        </div>
+        <i class="${isFavorite ? 'fas' : 'far'} fa-star favorite-btn" onclick="toggleFavorite(this, '${exercise.name.replace("'", "\\'")}')"></i>
     </div>
+    <div class="exercise-detail">
+        <img src="${gifUrl}" alt="Exercise GIF" style="display: block; margin-left: auto; margin-right: auto; height: auto; border: 2px solid black; margin-bottom: 20px;">
+        <p>${instructions}</p>
+    </div>
+</div>
 `;
+    });
+    exercisesContainer.innerHTML = htmlContent;
+    setupExerciseContainerToggle(); // Ensures setup is refreshed each time new content is loaded
+}
 
-        });
-        exercisesContainer.innerHTML = htmlContent;
-        setupExerciseContainerToggle(); // Setup functionality for showing and hiding details
-    }
+
+
 
     function toTitleCase(str) {
         return str.replace(/\w\S*/g, function (txt) {
@@ -188,6 +218,38 @@
             }
         });
     });
+
+    function toggleFavorite(element, exerciseName) {
+        element.classList.toggle('fas'); // Toggle filled star class
+        element.classList.toggle('far'); // Toggle empty star class
+
+        // Depending on current status, update server
+        const isFavorite = element.classList.contains('fas'); // Check if it's now a favorite
+
+        fetch('/toggle_favorite', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ exerciseName, isFavorite })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    // If the server toggling failed, revert the icon change
+                    element.classList.toggle('fas');
+                    element.classList.toggle('far');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // In case of error, revert the icon change
+                element.classList.toggle('fas');
+                element.classList.toggle('far');
+            });
+    }
+
+
 </script>
 
 {% endblock %}
