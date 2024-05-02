@@ -39,7 +39,7 @@ def home():
     topics = db.session.execute(db.select(Topic)).scalars()
     # for topic in topics:
     #     print(topic.title, topic.description, topic.id)
-    return render_template("bootstrapindex.html", topics=topics)
+    return render_template("forumhome.html", topics=topics)
 
 # Page will display a given topic
 @app.route("/topic/<int:id>", methods=["GET", "POST"])
@@ -52,8 +52,8 @@ def topic(id):
         )
         db.session.add(comment)
         db.session.commit()
-
-
+    
+    
     # Pull the topic and its comments
     topic = db.get_or_404(Topic, id)
     comments = Comment.query.filter_by(topicId=id).all()
@@ -62,7 +62,6 @@ def topic(id):
     #     print(comments)
     return render_template("forumpost.html", topic=topic, comments=comments )
 
-
-
-
 app.run(debug=True, port=5001)
+
+
