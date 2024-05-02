@@ -47,13 +47,23 @@
   </div>
   <div class="buttons-container">
     {% if logged_in %}
-        <form action="/logout" method="post">
-            <button type="submit" class="inline-block bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded logout-btn">Log out</button>
-        </form>
+    <form action="/logout" method="post" class="mr-4">
+        <button type="submit" class="inline-block bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded logout-btn">Log out</button>
+    </form>
+{% endif %}
+
         <!-- Profile icon button -->
         
-    {% endif %}
-        <a href="/profile" class="text-gray-500 mx-2 hover:text-indigo-600 profile-btn"><i class="fas fa-user"></i></a>
+        {% if session.get('userid') %}
+    <div class="ml-auto">
+        <a href="{{ url_for('profile') }}" class="profile-button">
+            <div class="w-14 h-14 bg-gray-300 rounded-full overflow-hidden">
+                <img src="{{ user.get('profilepicture') }}" alt="Profile Picture" class="w-full h-full object-cover">
+            </div>
+        </a>
+    </div>
+{% endif %}
+
 </div>
 </nav>
 

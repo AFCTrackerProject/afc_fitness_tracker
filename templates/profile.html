@@ -33,22 +33,22 @@
         {% endwith %}
         
         <!-- Avatar Placeholder -->
-        <div class="w-32 h-32 bg-gray-300 rounded-full mb-4 overflow-hidden">
+        <div class="w-48 h-48 bg-gray-300 rounded-full mb-4 overflow-hidden">
             <img src="{{ user.get('profilepicture') }}" alt="Profile Picture" class="w-full h-full object-cover">
         </div>
         
-        <h1 class="text-2xl font-bold text-center">{{ user.firstname }} {{ user.lastname }}</h1>
-        <p class="text-gray-600">{{ user.username }}</p>
+        <h1 class="text-3xl font-bold text-center">{{ user.firstname }} {{ user.lastname }}</h1>
+        <p class="text-lg text-gray-600">{{ user.username }}</p>
         <div class="text-left w-full mt-6">
-            <p><strong>Email:</strong> {{ user.email }} </p>
-            <p><strong>Date of Birth:</strong> {{ user.dateofbirth }} </p>
-            <p><strong>Gender:</strong> {{ user.gender }}</p>
-            <p><strong>Height:</strong> {{ user.height }} in</p>
-            <p><strong>Weight:</strong> {{ user.weight }} lbs</p>
-            <p><strong>Favorite Workout:</strong></p>
+            <p class="text-lg"><strong>Email:</strong> {{ user.email }} </p>
+            <p class="text-lg"><strong>Date of Birth:</strong> {{ user.dateofbirth }} </p>
+            <p class="text-lg"><strong>Gender:</strong> {{ user.gender }}</p>
+            <p class="text-lg"><strong>Height:</strong> {{ user.height }} in</p>
+            <p class="text-lg"><strong>Weight:</strong> {{ user.weight }} lbs</p>
+            <p class="text-lg"><strong>Favorite Workout:</strong></p>
             <ul id="favorite-workouts-list"></ul>
-
         </div>
+        
         <div class="mt-6 flex flex-col space-y-4">
             <a href="{{ url_for('updateprofile') }}" class="text-blue-600 hover:underline">Update Profile</a>
             <!-- Add form for deleting the account -->
