@@ -103,7 +103,10 @@ def index():
 
 @app.get('/workouts')
 def workouts():
-    return render_template('workouts.html')
+    user = None
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    return render_template('workouts.html', user=user)
 
 @app.get('/secret')
 def secret():
@@ -120,6 +123,9 @@ def forum_home():
     if 'userid' not in session:
         flash('You need to log in to use the forum feature.', 'error')
         return redirect('/login')
+    
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
 
     if request.method == "POST":
         title = request.form.get("title")
@@ -138,7 +144,7 @@ def forum_home():
             flash("Both title and description must be provided.", "error")
 
     topics = Topic.query.all()  # Fetch all topics
-    return render_template("forumhome.html", topics=topics)
+    return render_template("forumhome.html", topics=topics, user=user)
 
 
 # Specific topic and comments page
@@ -187,6 +193,9 @@ def macrotracker():
     if 'userid' not in session:
         flash('You need to log in to use the macrotracker.', 'error')
         return redirect('/login')
+    
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
 
     userid = session['userid']
     targets = session.get(f'targets_{userid}', None)    
@@ -279,7 +288,7 @@ def macrotracker():
         if total_fats >= float(targets['fats']):
             flash('Congrats! You hit your fats goal for today', 'success')
                 
-    return render_template('macrotracker.html',
+    return render_template('macrotracker.html', user=user,
                        all_breakfast_macros=all_breakfast_macros,
                        all_lunch_macros=all_lunch_macros,
                        all_dinner_macros=all_dinner_macros,
@@ -310,6 +319,9 @@ def save_targets():
         flash('You need to log in to set a target.', 'error')
         return redirect('/login')
     
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    
     userid = session['userid']
 
     if request.method == 'POST':
@@ -330,7 +342,7 @@ def save_targets():
         save_target(userid, target_caloriesconsumed, target_proteinconsumed, target_carbsconsumed, target_fatsconsumed)
         return redirect(url_for('macrotracker'))    
 
-    return render_template('targets.html')
+    return render_template('targets.html',user=user)
 
 @app.post('/clear_breakfast_logs')
 def clear_breakfast_logs_route():
@@ -364,24 +376,35 @@ def clear_snack_logs_route():
         flash('Failed to clear snack logs', 'error')
     return redirect(url_for('macrotracker'))
 
-@app.post('/workouttracker')
+@app.get('/workouttracker')
 def workouttracker():
     if 'userid' not in session:
             flash('You need to log in to use the workout tracker.', 'error')
             return redirect('/login')  
-    return render_template('workouttracker.html')
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    return render_template('workouttracker.html', user=user)
 
 @app.get('/contact')
 def contact():
-    return render_template('contact.html')
+    user = None
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    return render_template('contact.html', user=user)
 
 @app.get('/about')
 def about():
-    return render_template('about.html')
+    user = None
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    return render_template('about.html', user=user)
 
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    user = None
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
     if request.method == 'POST': 
         # Retrieve form data from what the user just submitted
         firstname = request.form.get('firstname')
@@ -395,21 +418,21 @@ def signup():
         # Check that username and password are not empty
         if not username or not password:
             flash('Username/password cannot be empty', 'error')
-            return render_template('signup.html', show_popup=True)
+            return render_template('signup.html', show_popup=True, user=user)
         
         # Check that the passwords on the form match
         if password != confirmpassword:
             flash('Passwords do not match', 'error')
-            return render_template('signup.html', show_popup=True)
+            return render_template('signup.html', show_popup=True, user=user)
 
         # Check if the provided username and email already exist in the database
         if not fitness_repo.is_username_available(username):
             flash('Username already exists. Please choose a different username.', 'error')
-            return render_template('signup.html', show_popup=True)
+            return render_template('signup.html', show_popup=True, user=user)
 
         if not fitness_repo.is_email_available(email):
             flash('Email address already exists. Please choose a different email.', 'error')
-            return render_template('signup.html', show_popup=True)
+            return render_template('signup.html', show_popup=True, user=user)
 
         # Encrypts password and stores it as a hashed password
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -426,10 +449,10 @@ def signup():
             send_confirmation_email(email, firstname)
 
         # Render the verification page with user's email
-        return render_template('verification.html', user_email=email)
+        return render_template('verification.html', user_email=email, user=user)
 
     # Render the signup form template for GET requests
-    return render_template('signup.html')
+    return render_template('signup.html', user=user)
 
 # Function to send confirmation email
 def send_confirmation_email(email, firstname):
@@ -517,7 +540,7 @@ def verify_token():
         else:
             # If the token doesn't match, render an error message or redirect back to the form
             flash('Invalid token. Please try again', 'error')
-            return render_template('verification.html')
+            return render_template('verification.html', user=user)
 
     # Render the verification form template with the user object
     return render_template('verification.html', user=user)
@@ -626,7 +649,7 @@ def send_reset_email():
                 except Exception as e:
                     print(str(e))
                     flash('Error sending email. Please try again.', 'error')
-                    return render_template('forgotpassword.html')
+                    return render_template('forgotpassword.html',user=user)
                 
                 # Render a page similar to verification.html
                 print(f"Passing ***{email}*** to verify_token_fp")
@@ -672,6 +695,7 @@ def verify_token_fp():
 
 @app.route('/reset_password', methods=['GET', 'POST'])
 def reset_password():
+    user=None
     if request.method == 'GET':
         # Retrieve the confirmation token from the query parameters
         confirmation_token_fp = request.args.get('confirmation_token_fp')
@@ -681,7 +705,7 @@ def reset_password():
         session['confirmation_token_fp'] = confirmation_token_fp
 
         # Render the reset password form template
-        return render_template('reset.html')
+        return render_template('reset.html',user=user)
 
     elif request.method == 'POST':
         # Retrieve the confirmation token from the session
@@ -704,7 +728,7 @@ def reset_password():
         # Check if passwords match
         if password != confirm_password:
             flash('Passwords do not match', 'error')
-            return render_template('reset.html')
+            return render_template('reset.html',user=user)
 
         # Hash the new password
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -719,11 +743,14 @@ def reset_password():
         return redirect(url_for('login'))
 
     # Render the reset password form template for other HTTP methods
-    return render_template('reset.html')
+    return render_template('reset.html',user=user)
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    user=None
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
     # Retrieve form data from what the user just submitted
     if request.method == 'POST':
         username = request.form.get('username')
@@ -763,12 +790,15 @@ def login():
             return redirect(url_for('profile'))
     
     # If GET request (i.e., accessing the login page)
-    return render_template('login.html')
+    return render_template('login.html',user=user)
 
 
 @app.get('/forgotpassword')
 def forgot_password():
-    return render_template('forgotpassword.html')
+    user = None
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    return render_template('forgotpassword.html',user=user)
 
 @app.post('/logout')
 def logout():
@@ -793,7 +823,10 @@ def finder():
     if 'userid' not in session:
         flash('You need to log in to use the Finder feature.','error')
         return redirect('/login')
-    return render_template('finder.html')
+
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    return render_template('finder.html',user=user)
 
 @app.post('/find_places')
 def find_places():
@@ -870,7 +903,10 @@ def chatbot():
     if 'userid' not in session:
         flash('You need to log in to use the Chatbot feature.','error')
         return redirect('/login')
-    return render_template('chatbot.html')
+    user = None
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    return render_template('chatbot.html',user=user)
 
 # Route to handle user input and get bot response
 @app.post('/chatbot')
@@ -996,7 +1032,7 @@ def updateprofile():
         else:
             flash('Failed to update profile. Please try again.', 'error')
 
-        return redirect(url_for('updateprofile'))
+        return redirect(url_for('updateprofile',user=user))
 
     # Fetch user data for rendering the profile page
     user = fitness_repo.get_user_by_id(session['userid'])

@@ -57,7 +57,7 @@
 
         <!-- Profile icon button -->
         
-        {% if session.get('userid') %}
+        {% if session.get('userid') and user %}
     <div class="ml-auto">
         <a href="{{ url_for('profile') }}" class="profile-button">
             <div class="w-14 h-14 bg-gray-300 rounded-full overflow-hidden">
@@ -66,6 +66,7 @@
         </a>
     </div>
 {% endif %}
+
 
 </div>
 
