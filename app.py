@@ -16,8 +16,7 @@ import boto3
 import requests 
 import secrets
 from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros, save_target, clear_logs
-# from database.workouttracker import get_all_workoutlogs, insert_workout_log
-import psycopg
+from database.workouttracker import insert_workout_log, get_workout_logs
 from flask_sqlalchemy import SQLAlchemy
 
 
@@ -290,27 +289,12 @@ def clear_snack_logs_route():
         flash('Failed to clear snack logs', 'error')
     return redirect(url_for('macrotracker'))
 
-@app.route('/workouttracker', methods=['GET', 'POST'])
+@app.route('/workouttracker', methods=['GET'])
 def workouttracker():
     if 'userid' not in session:
             flash('You need to log in to use the workout tracker.', 'error')
-            return redirect('/login')
-        
-    if request.method == 'POST':
-        userid = session['userid']
-        exercise_name = request.form['exerciseName']
-        equipment = request.form['equipment']
-        target_muscle = request.form['targetMuscle']
-        duration = request.form['duration']
-        start_time = request.form['startDateTime']
-        end_time = request.form['endDateTime']
-
-        insert_workout_log(userid, exercise_name, equipment, target_muscle, duration, start_time, end_time, get_pool()) 
-    
-    
-    workout_logs = get_workout_logs(get_pool())
-    
-    return render_template('workouttracker.html', workout_logs=workout_logs)
+            return redirect('/login')  
+    return render_template('workouttracker.html')
 
 
 @app.get('/forum')
