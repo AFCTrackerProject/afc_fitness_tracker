@@ -4,3 +4,4 @@ __pycache__
 venv
 db_secrets.py
 .env
+migrations/

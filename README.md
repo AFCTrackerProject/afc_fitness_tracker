@@ -15,7 +15,7 @@ Welcome to the AFC Fitness Tracker project, a comprehensive solution developed f
 - **Shubi Gaur** - Team Lead & Database/Backend Developer
 - **Cameron Copenhaver** - Back-end Developer & API Specialist
 - **Tommy-Nam Nguyen** -  Front-end Developer & API Specialist
-- **Andrew Schmal** - Front-end Developer & DevOps for Docker Deployment
+- **Andrew Schmal** - Back-end Developer & DevOps for Docker Deployment
 
 Each member contributed to specific project components, collaborating to ensure good version control and effective team development.
 

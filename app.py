@@ -1,6 +1,8 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, abort, flash, get_flashed_messages, jsonify, session
 from dotenv import load_dotenv
+from datetime import datetime
+from sqlalchemy import DateTime
 from database import fitness_repo
 from database.fitness_repo import get_confirmation_token, verify_confirmation_token, get_user_by_id, generate_confirmation_token
 from flask_bcrypt import Bcrypt
@@ -18,12 +20,39 @@ import secrets
 from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros, save_target, clear_logs
 from database.workouttracker import insert_workout_log, get_workout_logs, clear_workout_logs
 from flask_sqlalchemy import SQLAlchemy
-
+from flask_migrate import Migrate
+from dotenv import load_dotenv
 load_dotenv()
 
+
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///default.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)  # Initialize SQLAlchemy with your Flask app
+load_dotenv()
+
+class Topic(db.Model):
+    __tablename__ = 'topics'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), unique=True, nullable=False)
+    description = db.Column(db.String(1024))
+    timestamp = db.Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class Comment(db.Model):
+    __tablename__ = 'comments'
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.String(1024), nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)  # Add timestamp column
+    topic_id = db.Column(db.Integer, db.ForeignKey('topics.id'), nullable=False)
+    topic = db.relationship('Topic', backref=db.backref('comments', lazy='dynamic'))
+
 mail = Mail(app)
 sg = SendGridAPIClient(os.getenv('SENDGRIDKEY'))
+
+
 
 #client = Client("str", "str")
 
@@ -63,22 +92,25 @@ s3 = boto3.client('s3',
                   aws_access_key_id=s3_access_key,
                   aws_secret_access_key=s3_secret_key)
 
-
 gmaps = googlemaps.Client(key=api_key)
 
 # gmaps = googlemaps.Client(key=os.getenv('GOOGLE_MAPS_API_KEY'))
-
-
 bcrypt = Bcrypt(app)
-
 
 @app.get('/')
 def index():
-    return render_template('index.html')
+    user = None
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    return render_template('index.html', user=user)
+
 
 @app.get('/workouts')
 def workouts():
-    return render_template('workouts.html')
+    user = None
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    return render_template('workouts.html', user=user)
 
 @app.get('/secret')
 def secret():
@@ -86,8 +118,60 @@ def secret():
         return redirect('/login')
     userid = session.get('userid')
     user = fitness_repo.get_user_by_id(userid)
-    return render_template('secret.html', user=user)
+    return render_template('profile.html', user=user)
 
+@app.route("/forum", methods=["GET", "POST"])
+def forum_home():
+    # Check if user is logged in before allowing access to the forum
+    if 'userid' not in session:
+        flash('You need to log in to use the forum feature.', 'error')
+        return redirect('/login')
+    
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+
+    if request.method == "POST":
+        title = request.form.get("title")
+        description = request.form.get("description")
+        if title and description:
+            existing_topic = Topic.query.filter_by(title=title).first()  # Check if the topic already exists
+            if existing_topic:
+                flash("A topic with this title already exists.", "error")
+            else:
+                # Create a new topic since it does not exist
+                new_topic = Topic(title=title, description=description)
+                db.session.add(new_topic)
+                db.session.commit()
+                flash("Topic added successfully!", "success")
+        else:
+            flash("Both title and description must be provided.", "error")
+
+    topics = Topic.query.all()  # Fetch all topics
+    return render_template("forumhome.html", topics=topics, user=user)
+
+
+# Specific topic and comments page
+@app.route("/forum/topic/<int:id>", methods=["GET", "POST"])
+def forum_topic(id):
+    if 'userid' not in session:
+        flash('You need to log in to use the forum feature.', 'error')
+        return redirect('/login')
+
+    topic = Topic.query.get_or_404(id) #ensures that topic exists or returns a 404
+
+    if request.method == "POST":
+        # Add a new comment to the topic
+        comment_text = request.form.get("comment")
+        if comment_text:  # Ensure non-empty comment
+            comment = Comment(text=comment_text, topic_id=id)
+            db.session.add(comment)
+            db.session.commit()
+            flash("Comment added successfully!", "success")
+        else:
+            flash("Comment cannot be empty.", "error")
+
+    comments = Comment.query.filter_by(topic_id=id).all()
+    return render_template("forumpost.html", topic=topic, comments=comments)
 
 def calculate_progress(total, target):
     # Ensure target is a float
@@ -111,6 +195,9 @@ def macrotracker():
     if 'userid' not in session:
         flash('You need to log in to use the macrotracker.', 'error')
         return redirect('/login')
+    
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
 
     userid = session['userid']
     targets = session.get(f'targets_{userid}', None)    
@@ -203,7 +290,7 @@ def macrotracker():
         if total_fats >= float(targets['fats']):
             flash('Congrats! You hit your fats goal for today', 'success')
                 
-    return render_template('macrotracker.html',
+    return render_template('macrotracker.html', user=user,
                        all_breakfast_macros=all_breakfast_macros,
                        all_lunch_macros=all_lunch_macros,
                        all_dinner_macros=all_dinner_macros,
@@ -234,6 +321,9 @@ def save_targets():
         flash('You need to log in to set a target.', 'error')
         return redirect('/login')
     
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    
     userid = session['userid']
 
     if request.method == 'POST':
@@ -254,9 +344,9 @@ def save_targets():
         save_target(userid, target_caloriesconsumed, target_proteinconsumed, target_carbsconsumed, target_fatsconsumed)
         return redirect(url_for('macrotracker'))    
 
-    return render_template('targets.html')
+    return render_template('targets.html',user=user)
 
-@app.route('/clear_breakfast_logs', methods=['POST'])
+@app.post('/clear_breakfast_logs')
 def clear_breakfast_logs_route():
     if clear_logs("Breakfast"):
         flash('Breakfast logs cleared successfully', 'info')
@@ -264,7 +354,7 @@ def clear_breakfast_logs_route():
         flash('Failed to clear breakfast logs', 'error')
     return redirect(url_for('macrotracker'))
 
-@app.route('/clear_lunch_logs', methods=['POST'])
+@app.post('/clear_lunch_logs')
 def clear_lunch_logs_route():
     if clear_logs("Lunch"):
         flash('Lunch logs cleared successfully', 'info')
@@ -272,7 +362,7 @@ def clear_lunch_logs_route():
         flash('Failed to clear lunch logs', 'error')
     return redirect(url_for('macrotracker'))
 
-@app.route('/clear_dinner_logs', methods=['POST'])
+@app.post('/clear_dinner_logs')
 def clear_dinner_logs_route():
     if clear_logs("Dinner"):
         flash('Dinner logs cleared successfully', 'info')
@@ -280,7 +370,7 @@ def clear_dinner_logs_route():
         flash('Failed to clear dinner logs', 'error')
     return redirect(url_for('macrotracker'))
 
-@app.route('/clear_snack_logs', methods=['POST'])
+@app.post('/clear_snack_logs')
 def clear_snack_logs_route():
     if clear_logs("Snack"):
         flash('Snack logs cleared successfully', 'info')
@@ -288,63 +378,35 @@ def clear_snack_logs_route():
         flash('Failed to clear snack logs', 'error')
     return redirect(url_for('macrotracker'))
 
-@app.route('/workouttracker', methods=['GET', 'POST'])
+@app.get('/workouttracker')
 def workouttracker():
     if 'userid' not in session:
             flash('You need to log in to use the workout tracker.', 'error')
             return redirect('/login')  
-        
-    if request.method == 'POST':
-        userid = session.get('userid')
-        exercisename = session.get('exercisename')
-        starttime = request.form.get('start-time')
-        endtime = request.form.get('end-time')
-        
-        insert_workout_log(userid, starttime, endtime, exercisename)
-
-    
-    workout_logs = get_workout_logs()
-
-    return render_template('workouttracker.html', workout_logs=workout_logs)
-
-@app.route('/add_exercise', methods=['POST'])
-def add_exercise():
-    exercisename = request.json.get('exercisename')
-    print('Received exercise name:', exercisename)
-    session['exercisename'] = exercisename  # Store exercise name in session
-    return 'Exercise name received by Flask'    
-
-@app.route('/clear_workout_logs', methods=['POST'])
-def clear_workout_logs_route():
-    if request.method == 'POST':
-        userid = session.get('userid')
-        
-        if clear_workout_logs(userid):
-            flash('Workout logs cleared successfully.', 'success')
-        else:
-            flash('Failed to clear workout logs.', 'error')
-    
-    return redirect(url_for('workouttracker'))
-
-
-@app.get('/forum')
-def forum():
-    if 'userid' not in session:
-        flash('You need to log in to use the forum feature.','error')
-        return redirect('/login')
-    return render_template('forum.html')
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    return render_template('workouttracker.html', user=user)
 
 @app.get('/contact')
 def contact():
-    return render_template('contact.html')
+    user = None
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    return render_template('contact.html', user=user)
 
 @app.get('/about')
 def about():
-    return render_template('about.html')
+    user = None
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    return render_template('about.html', user=user)
 
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    user = None
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
     if request.method == 'POST': 
         # Retrieve form data from what the user just submitted
         firstname = request.form.get('firstname')
@@ -358,21 +420,21 @@ def signup():
         # Check that username and password are not empty
         if not username or not password:
             flash('Username/password cannot be empty', 'error')
-            return render_template('signup.html', show_popup=True)
+            return render_template('signup.html', show_popup=True, user=user)
         
         # Check that the passwords on the form match
         if password != confirmpassword:
             flash('Passwords do not match', 'error')
-            return render_template('signup.html', show_popup=True)
+            return render_template('signup.html', show_popup=True, user=user)
 
         # Check if the provided username and email already exist in the database
         if not fitness_repo.is_username_available(username):
             flash('Username already exists. Please choose a different username.', 'error')
-            return render_template('signup.html', show_popup=True)
+            return render_template('signup.html', show_popup=True, user=user)
 
         if not fitness_repo.is_email_available(email):
             flash('Email address already exists. Please choose a different email.', 'error')
-            return render_template('signup.html', show_popup=True)
+            return render_template('signup.html', show_popup=True, user=user)
 
         # Encrypts password and stores it as a hashed password
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -389,14 +451,10 @@ def signup():
             send_confirmation_email(email, firstname)
 
         # Render the verification page with user's email
-        return render_template('verification.html', user_email=email)
+        return render_template('verification.html', user_email=email, user=user)
 
     # Render the signup form template for GET requests
-    return render_template('signup.html')
-
-
-
-
+    return render_template('signup.html', user=user)
 
 # Function to send confirmation email
 def send_confirmation_email(email, firstname):
@@ -484,13 +542,13 @@ def verify_token():
         else:
             # If the token doesn't match, render an error message or redirect back to the form
             flash('Invalid token. Please try again', 'error')
-            return render_template('verification.html')
+            return render_template('verification.html', user=user)
 
     # Render the verification form template with the user object
     return render_template('verification.html', user=user)
 
 # Route to display verification form
-@app.route('/verification_form')
+@app.get('/verification_form')
 def verification_form():
     # Check if user ID is in session
     if 'userid' not in session:
@@ -510,9 +568,7 @@ def verification_form():
     # Render the verification form template with the user object
     return render_template('verification.html', user=user)
 
-
-
-@app.route('/send_reset_email', methods=['POST'])
+@app.post('/send_reset_email')
 def send_reset_email():
     if request.method == 'POST':
         email = request.form.get('email')
@@ -595,7 +651,7 @@ def send_reset_email():
                 except Exception as e:
                     print(str(e))
                     flash('Error sending email. Please try again.', 'error')
-                    return render_template('forgotpassword.html')
+                    return render_template('forgotpassword.html',user=user)
                 
                 # Render a page similar to verification.html
                 print(f"Passing ***{email}*** to verify_token_fp")
@@ -639,11 +695,9 @@ def verify_token_fp():
     return render_template('verificationreset.html', user_email=email)
 
 
-
-
-
 @app.route('/reset_password', methods=['GET', 'POST'])
 def reset_password():
+    user=None
     if request.method == 'GET':
         # Retrieve the confirmation token from the query parameters
         confirmation_token_fp = request.args.get('confirmation_token_fp')
@@ -653,7 +707,7 @@ def reset_password():
         session['confirmation_token_fp'] = confirmation_token_fp
 
         # Render the reset password form template
-        return render_template('reset.html')
+        return render_template('reset.html',user=user)
 
     elif request.method == 'POST':
         # Retrieve the confirmation token from the session
@@ -676,7 +730,7 @@ def reset_password():
         # Check if passwords match
         if password != confirm_password:
             flash('Passwords do not match', 'error')
-            return render_template('reset.html')
+            return render_template('reset.html',user=user)
 
         # Hash the new password
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -691,49 +745,14 @@ def reset_password():
         return redirect(url_for('login'))
 
     # Render the reset password form template for other HTTP methods
-    return render_template('reset.html')
+    return render_template('reset.html',user=user)
 
-
-
-'''
-@app.route('/verify_phone', methods=['GET', 'POST'])
-def verify_phone():
-    if request.method == 'POST':
-        # Retrieve the phone number and verification code from the form
-        #phone_number = request.form.get('phone_number')
-        print(phone_number)
-        verification_code = request.form.get('verification_code')
-        
-        # Verify the phone number and code (you should implement this logic using Twilio)
-        if verify_phone_number(phone_number, verification_code):
-            flash('Phone number verified successfully!', 'success')
-            # Redirect to profile page upon successful verification
-            return redirect(url_for('profile'))
-        else:
-            flash('Phone number verification failed. Please try again.', 'error')
-            return render_template('verification.html')
-
-    # Render the verification page for GET requests
-    return render_template('verification.html')
-
-def verify_phone_number(phone_number, verification_code):
-    try:
-        verification_check = client.verify.services('VA11676748fbdd2f113ed0bab0b96f1cc5') \
-            .verification_checks \
-            .create(to=phone_number, code=verification_code)
-
-        # Check if the verification check was successful
-        if verification_check.status == 'approved':
-            return True
-        else:
-            return False
-    except Exception as e:
-        print(f"Error verifying phone number: {e}")
-        return False
-'''
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    user=None
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
     # Retrieve form data from what the user just submitted
     if request.method == 'POST':
         username = request.form.get('username')
@@ -773,12 +792,15 @@ def login():
             return redirect(url_for('profile'))
     
     # If GET request (i.e., accessing the login page)
-    return render_template('login.html')
+    return render_template('login.html',user=user)
 
 
-@app.route('/forgotpassword')
+@app.get('/forgotpassword')
 def forgot_password():
-    return render_template('forgotpassword.html')
+    user = None
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    return render_template('forgotpassword.html',user=user)
 
 @app.post('/logout')
 def logout():
@@ -798,14 +820,17 @@ def profile():
     print(user.get('profilepicture'))
     return render_template('profile.html', user=user)
 
-@app.route('/finder.html')
+@app.get('/finder.html')
 def finder():
     if 'userid' not in session:
         flash('You need to log in to use the Finder feature.','error')
         return redirect('/login')
-    return render_template('finder.html')
 
-@app.route('/find_places', methods=['POST'])
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    return render_template('finder.html',user=user)
+
+@app.post('/find_places')
 def find_places():
     try:
         # Get ZIP code and place type from form data
@@ -875,15 +900,18 @@ def find_places():
         # Handle API error
         return jsonify({'error': str(e)}), 500
     
-@app.route('/chatbot.html')
+@app.get('/chatbot.html')
 def chatbot():
     if 'userid' not in session:
-        flash('You need to log in to use the Finder feature.','error')
+        flash('You need to log in to use the Chatbot feature.','error')
         return redirect('/login')
-    return render_template('chatbot.html')
+    user = None
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    return render_template('chatbot.html',user=user)
 
 # Route to handle user input and get bot response
-@app.route('/chatbot', methods=['POST'])
+@app.post('/chatbot')
 
 def handle_message():
     data = request.get_json()
@@ -905,7 +933,7 @@ def get_bot_response(message):
     )
     return response.choices[0].text.strip()
 
-@app.route('/submit_question', methods=['POST'])
+@app.post('/submit_question')
 def handle_question_submission():
     # Check if userid and username are stored in the session
     if 'userid' not in session or 'username' not in session:
@@ -1006,7 +1034,7 @@ def updateprofile():
         else:
             flash('Failed to update profile. Please try again.', 'error')
 
-        return redirect(url_for('updateprofile'))
+        return redirect(url_for('updateprofile',user=user))
 
     # Fetch user data for rendering the profile page
     user = fitness_repo.get_user_by_id(session['userid'])
@@ -1045,13 +1073,9 @@ def toggle_favorite():
 
     return jsonify(success=True)
 
-@app.route('/get_favorite_workouts')
+@app.get('/get_favorite_workouts')
 def get_favorite_workouts():
     return jsonify({'favoriteWorkouts': list(favorite_workouts)})
-
-
-
-
 
 
 @app.context_processor
@@ -1084,7 +1108,7 @@ def search_youtube(query):
     return response.json()
 
 
-@app.route('/exercises/<muscle>')
+@app.get('/exercises/<muscle>')
 def exercises(muscle):
 #    print(f"Fetching exercises for muscle: {muscle}")  # Console log
     try:
@@ -1098,8 +1122,6 @@ def exercises(muscle):
 
 # End Exercises API
 
-
 if __name__ == "__main__":
     app.run(debug=True) 
 
-# Forum Porting
