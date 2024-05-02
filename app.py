@@ -95,7 +95,11 @@ bcrypt = Bcrypt(app)
 
 @app.get('/')
 def index():
-    return render_template('index.html')
+    user = None
+    if 'userid' in session:
+        user = fitness_repo.get_user_by_id(session['userid'])
+    return render_template('index.html', user=user)
+
 
 @app.get('/workouts')
 def workouts():
@@ -1079,7 +1083,6 @@ def exercises(muscle):
 
 
 # End Exercises API
-
 
 if __name__ == "__main__":
     app.run(debug=True) 
