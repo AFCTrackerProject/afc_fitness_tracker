@@ -16,17 +16,17 @@
         <!-- Buttons and exercise list are side-by-side now -->
         <div class="button-container">
           <div class="bg-white shadow-xl rounded px-8 pt-6 pb-8 mb-4"
-            style="border-top: 2px solid rgba(0, 0, 0, 0.05); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);">
-            <div class="flex flex-col items-center">
-              {% for section in ['Chest', 'Back', 'Arms', 'Legs'] %}
-              <button onclick="loadExercises('{{ section|lower }}')"
-                class="text-lg font-semibold text-gray-800 bg-white hover:bg-gray-100 py-2 px-4 rounded shadow mb-2 w-full">
-                {{ section }} Exercises
-              </button>
-              {% endfor %}
-            </div>
+              style="border-top: 2px solid rgba(0, 0, 0, 0.05); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);">
+              <div class="flex flex-col items-center">
+                  {% for section in ['Chest', 'Back', 'Arms', 'Legs'] %}
+                  <button onclick="loadExercises('{{ section|lower }}', event)" 
+                      class="text-lg font-semibold text-gray-800 bg-white hover:bg-gray-100 py-2 px-4 rounded shadow mb-2 w-full">
+                      {{ section }} Exercises
+                  </button>
+                  {% endfor %}
+              </div>
           </div>
-        </div>
+      </div>      
         <div class="exercise-display" style="flex: 3; min-width: 20%; margin-left: 150px; margin-top: -150px;">
           <input type="text" id="exerciseSearchInput" placeholder="Search exercises..."
             class="hidden w-64 p-2 border border-gray-300 rounded mb-4">
@@ -35,7 +35,7 @@
       </div>
 
 
-      <input type="submit" value="Submit" style="background-color: #f4f4f4; border: 1px solid #ccc; padding: 10px 20px; cursor: pointer; border-radius: 5px;">
+    <input type="submit" value="Submit" style="display: block; margin: left; background-color: #7b38d8; padding: 20px; width: 200px; color: #ffffff; text-align: center; text-decoration: none; border-radius: 5px;">
     </form>
   </div>
 
@@ -43,19 +43,30 @@
   <!-- Right side content - Exercise Log Table -->
   <div class="flex-1">
     <h2 class="text-3xl font-bold text-gray-800 mb-2">Exercise Log</h2>
+    <form action="{{ url_for('clear_workout_logs_route') }}" method="post">
+      <button type="submit" class="clear-button">Clear Workout Logs</button>
+    </form>
+    <br>
     <table id="exerciseTable" class="w-full">
       <thead>
         <tr>
-          <th>List of Exercises Completed</th>
+          <th>Start Time</th>
+          <th>End Time</th>
+          <th>Exercise Completed</th>
         </tr>
       </thead>
       <tbody>
-        <!-- Rows added dynamically here -->
-      </tbody>
+        {% for log in workout_logs %}
+        <tr>
+          <td>{{ log.startdatetime }}</td>
+          <td>{{ log.enddatetime }}</td>
+          <td>{{ log.exercisename }}</td>
+        </tr>
+    {% endfor %}
+  </tbody>
     </table>
   </div>
 </div>
-<!-- Exercise Log Table -->
 
 
 <script>
@@ -67,7 +78,9 @@
     "legs": ["lower legs", "upper legs"]
   };
 
-  function loadExercises(muscle) {
+  function loadExercises(muscle, event) {
+    event.preventDefault(); // Prevent the default form submission
+
     const exercisesContainer = document.querySelector('#exercisesList');
     const searchBar = document.querySelector('#exerciseSearchInput');
     exercisesContainer.innerHTML = '';  // Clear previous exercises
@@ -75,13 +88,14 @@
 
     const apiMuscles = muscleMap[muscle.toLowerCase()];
     if (Array.isArray(apiMuscles)) {
-      apiMuscles.forEach(apiMuscle => {
-        fetchExerciseData(apiMuscle);
-      });
+        apiMuscles.forEach(apiMuscle => {
+            fetchExerciseData(apiMuscle);
+        });
     } else {
-      fetchExerciseData(apiMuscles);
+        fetchExerciseData(apiMuscles);
     }
-  }
+}
+
 
   function fetchExerciseData(apiMuscle) {
     fetch('/exercises/' + apiMuscle)
@@ -156,36 +170,41 @@
   document.addEventListener('DOMContentLoaded', function () {
     // Attach event listener to the body or a static parent element
     document.body.addEventListener('click', function (event) {
-      if (event.target.classList.contains('add-exercise-btn')) {
-        event.stopPropagation();  // Stop the event from bubbling up to the parent
+        if (event.target.classList.contains('add-exercise-btn')) {
+            event.stopPropagation();  // Stop the event from bubbling up to the parent
 
-        const exerciseContainer = event.target.closest('.exercise-container');
-        const exerciseName = exerciseContainer.querySelector('h3').textContent;
+            const exerciseContainer = event.target.closest('.exercise-container');
+            const exerciseName = exerciseContainer.querySelector('h3').textContent;
 
-        // Call the function to add this exercise to the log table
-        addToExerciseLog(exerciseName);
-      }
+            console.log('Exercise Name:', exerciseName); // Add this console log to check exercise name
+
+            // Call the function to add this exercise to the log table
+            addToExerciseLog(exerciseName);
+        }
     });
-  });
+});
 
-  function addToExerciseLog(name) {
-    const tableBody = document.querySelector('#exerciseTable tbody');
 
-    // Check if the exercise is already added
-    const existingEntries = Array.from(tableBody.querySelectorAll('tr')).map(row => row.querySelector('td').textContent.trim());
-    if (existingEntries.includes(name)) {
-      console.log('This exercise has already been added.');  // Use console.log for debugging
-      return; // Stop adding if it's a duplicate
+function addToExerciseLog(name) {
+  // Send an HTTP POST request to Flask with the exercise name
+  fetch('/add_exercise', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ exercisename: name })
+  })
+  .then(response => {
+    if (response.ok) {
+      console.log('Exercise name sent successfully to Flask.');
+    } else {
+      console.error('Failed to send exercise name to Flask.');
     }
-
-    // Create a new row and cell for the exercise name
-    const row = document.createElement('tr');
-    const nameCell = document.createElement('td');
-    nameCell.textContent = name;
-    row.appendChild(nameCell);  // Append the cell to the row
-
-    tableBody.appendChild(row);  // Append the row to the table body
-  }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  });
+}
 </script>
 
 <style>
@@ -291,6 +310,16 @@
     width: 100%;
     overflow-x: auto;
   }
+  .clear-button {
+    background-color: #ff0000; /* Red background color */
+    color: #ffffff; /* White text color */
+    padding: 5px 10px; /* Smaller padding for the button */
+    border: none; /* No border */
+    border-radius: 5px; /* Rounded corners */
+    cursor: pointer; /* Cursor style */
+    font-size: 14px; /* Smaller font size */
+    transition: background-color 0.3s ease; /* Smooth transition for background color */
+}    
 </style>
 
 
