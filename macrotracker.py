@@ -74,4 +74,3 @@ def clear_logs(meal_type):
     except Exception as e:
         print("Error:", e)
         return False  # Return False if there was an error
-
