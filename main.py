@@ -2,17 +2,14 @@ from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 
 
-
+#create extension
+db = SQLAlchemy()
 #create app
 app = Flask(__name__)
 # configure the SQLite database, relative to the app instance folder
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///project.db"
 # initialize the app with the extension
 db.init_app(app)
-
-#create extension
-db = SQLAlchemy()
-
 
 class Topic(db.Model):
     id = db.Column(db.Integer, primary_key=True)
