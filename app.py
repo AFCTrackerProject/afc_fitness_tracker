@@ -88,14 +88,10 @@ s3 = boto3.client('s3',
                   aws_access_key_id=s3_access_key,
                   aws_secret_access_key=s3_secret_key)
 
-
 gmaps = googlemaps.Client(key=api_key)
 
 # gmaps = googlemaps.Client(key=os.getenv('GOOGLE_MAPS_API_KEY'))
-
-
 bcrypt = Bcrypt(app)
-
 
 @app.get('/')
 def index():
@@ -111,7 +107,7 @@ def secret():
         return redirect('/login')
     userid = session.get('userid')
     user = fitness_repo.get_user_by_id(userid)
-    return render_template('secret.html', user=user)
+    return render_template('profile.html', user=user)
 
 # Forum homepage
 @app.route("/forum", methods=["GET", "POST"])
@@ -332,7 +328,7 @@ def save_targets():
 
     return render_template('targets.html')
 
-@app.route('/clear_breakfast_logs', methods=['POST'])
+@app.post('/clear_breakfast_logs')
 def clear_breakfast_logs_route():
     if clear_logs("Breakfast"):
         flash('Breakfast logs cleared successfully', 'info')
@@ -340,7 +336,7 @@ def clear_breakfast_logs_route():
         flash('Failed to clear breakfast logs', 'error')
     return redirect(url_for('macrotracker'))
 
-@app.route('/clear_lunch_logs', methods=['POST'])
+@app.post('/clear_lunch_logs')
 def clear_lunch_logs_route():
     if clear_logs("Lunch"):
         flash('Lunch logs cleared successfully', 'info')
@@ -348,7 +344,7 @@ def clear_lunch_logs_route():
         flash('Failed to clear lunch logs', 'error')
     return redirect(url_for('macrotracker'))
 
-@app.route('/clear_dinner_logs', methods=['POST'])
+@app.post('/clear_dinner_logs')
 def clear_dinner_logs_route():
     if clear_logs("Dinner"):
         flash('Dinner logs cleared successfully', 'info')
@@ -356,7 +352,7 @@ def clear_dinner_logs_route():
         flash('Failed to clear dinner logs', 'error')
     return redirect(url_for('macrotracker'))
 
-@app.route('/clear_snack_logs', methods=['POST'])
+@app.post('/clear_snack_logs')
 def clear_snack_logs_route():
     if clear_logs("Snack"):
         flash('Snack logs cleared successfully', 'info')
@@ -364,14 +360,12 @@ def clear_snack_logs_route():
         flash('Failed to clear snack logs', 'error')
     return redirect(url_for('macrotracker'))
 
-@app.route('/workouttracker', methods=['GET'])
+@app.post('/workouttracker')
 def workouttracker():
     if 'userid' not in session:
             flash('You need to log in to use the workout tracker.', 'error')
             return redirect('/login')  
     return render_template('workouttracker.html')
-
-
 
 @app.get('/contact')
 def contact():
@@ -432,10 +426,6 @@ def signup():
 
     # Render the signup form template for GET requests
     return render_template('signup.html')
-
-
-
-
 
 # Function to send confirmation email
 def send_confirmation_email(email, firstname):
@@ -529,7 +519,7 @@ def verify_token():
     return render_template('verification.html', user=user)
 
 # Route to display verification form
-@app.route('/verification_form')
+@app.get('/verification_form')
 def verification_form():
     # Check if user ID is in session
     if 'userid' not in session:
@@ -549,9 +539,7 @@ def verification_form():
     # Render the verification form template with the user object
     return render_template('verification.html', user=user)
 
-
-
-@app.route('/send_reset_email', methods=['POST'])
+@app.post('/send_reset_email')
 def send_reset_email():
     if request.method == 'POST':
         email = request.form.get('email')
@@ -678,9 +666,6 @@ def verify_token_fp():
     return render_template('verificationreset.html', user_email=email)
 
 
-
-
-
 @app.route('/reset_password', methods=['GET', 'POST'])
 def reset_password():
     if request.method == 'GET':
@@ -733,44 +718,6 @@ def reset_password():
     return render_template('reset.html')
 
 
-
-'''
-@app.route('/verify_phone', methods=['GET', 'POST'])
-def verify_phone():
-    if request.method == 'POST':
-        # Retrieve the phone number and verification code from the form
-        #phone_number = request.form.get('phone_number')
-        print(phone_number)
-        verification_code = request.form.get('verification_code')
-        
-        # Verify the phone number and code (you should implement this logic using Twilio)
-        if verify_phone_number(phone_number, verification_code):
-            flash('Phone number verified successfully!', 'success')
-            # Redirect to profile page upon successful verification
-            return redirect(url_for('profile'))
-        else:
-            flash('Phone number verification failed. Please try again.', 'error')
-            return render_template('verification.html')
-
-    # Render the verification page for GET requests
-    return render_template('verification.html')
-
-def verify_phone_number(phone_number, verification_code):
-    try:
-        verification_check = client.verify.services('VA11676748fbdd2f113ed0bab0b96f1cc5') \
-            .verification_checks \
-            .create(to=phone_number, code=verification_code)
-
-        # Check if the verification check was successful
-        if verification_check.status == 'approved':
-            return True
-        else:
-            return False
-    except Exception as e:
-        print(f"Error verifying phone number: {e}")
-        return False
-'''
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     # Retrieve form data from what the user just submitted
@@ -815,7 +762,7 @@ def login():
     return render_template('login.html')
 
 
-@app.route('/forgotpassword')
+@app.get('/forgotpassword')
 def forgot_password():
     return render_template('forgotpassword.html')
 
@@ -837,14 +784,14 @@ def profile():
     print(user.get('profilepicture'))
     return render_template('profile.html', user=user)
 
-@app.route('/finder.html')
+@app.get('/finder.html')
 def finder():
     if 'userid' not in session:
         flash('You need to log in to use the Finder feature.','error')
         return redirect('/login')
     return render_template('finder.html')
 
-@app.route('/find_places', methods=['POST'])
+@app.post('/find_places')
 def find_places():
     try:
         # Get ZIP code and place type from form data
@@ -914,15 +861,15 @@ def find_places():
         # Handle API error
         return jsonify({'error': str(e)}), 500
     
-@app.route('/chatbot.html')
+@app.get('/chatbot.html')
 def chatbot():
     if 'userid' not in session:
-        flash('You need to log in to use the Finder feature.','error')
+        flash('You need to log in to use the Chatbot feature.','error')
         return redirect('/login')
     return render_template('chatbot.html')
 
 # Route to handle user input and get bot response
-@app.route('/chatbot', methods=['POST'])
+@app.post('/chatbot')
 
 def handle_message():
     data = request.get_json()
@@ -944,7 +891,7 @@ def get_bot_response(message):
     )
     return response.choices[0].text.strip()
 
-@app.route('/submit_question', methods=['POST'])
+@app.post('/submit_question')
 def handle_question_submission():
     # Check if userid and username are stored in the session
     if 'userid' not in session or 'username' not in session:
@@ -1084,13 +1031,9 @@ def toggle_favorite():
 
     return jsonify(success=True)
 
-@app.route('/get_favorite_workouts')
+@app.get('/get_favorite_workouts')
 def get_favorite_workouts():
     return jsonify({'favoriteWorkouts': list(favorite_workouts)})
-
-
-
-
 
 
 @app.context_processor
@@ -1123,7 +1066,7 @@ def search_youtube(query):
     return response.json()
 
 
-@app.route('/exercises/<muscle>')
+@app.get('/exercises/<muscle>')
 def exercises(muscle):
 #    print(f"Fetching exercises for muscle: {muscle}")  # Console log
     try:
