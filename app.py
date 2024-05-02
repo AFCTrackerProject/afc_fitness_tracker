@@ -20,11 +20,36 @@ from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros,
 from flask_sqlalchemy import SQLAlchemy
 
 
+
 load_dotenv()
 
 app = Flask(__name__)
 mail = Mail(app)
 sg = SendGridAPIClient(os.getenv('SENDGRIDKEY'))
+
+#forum stuff lmao
+
+# configure the SQLite database, relative to the app instance folder
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///project.db"
+# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False  # Optionally, to avoid overhead
+
+#create extension
+db = SQLAlchemy()
+
+# initialize the app with the extension
+db.init_app(app)
+
+
+class Topic(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String, unique=True, nullable=False)
+    description = db.Column(db.String)
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.String, unique=True, nullable=False)
+    topicId = db.Column(db.String)
+
 
 #client = Client("str", "str")
 
@@ -317,7 +342,18 @@ def forum():
     # if 'userid' not in session:
     #     flash('You need to log in to use the forum feature.','error')
     #     return redirect('/login')
-    return render_template('forum.html', topic=topics)
+    topics= Topic.query.all() # fetch all topics
+    return render_template('forum.html', topics=topics)
+
+@app.route("/topic/<int:id>", methods=["GET", "POST"])
+def topic(id):
+    topic = Topic.query.get_or_404(id)
+    if request.method == "POST":
+        comment = Comment(text=request.form["comment"], topicId=id)
+        db.session.add(comment)
+        db.session.commit()
+    comments = Comment.query.filter_by(topicId=id).all()
+    return render_template("forumpost.html", topic=topic, comments=comments)
 
 @app.get('/contact')
 def contact():
