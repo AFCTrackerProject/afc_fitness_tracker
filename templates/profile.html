@@ -1,6 +1,24 @@
 {% extends "_layout.html" %}
 
 {% block content %}
+<script>
+    // Fetch favorite workouts from the server and display them
+    fetch('/get_favorite_workouts')
+        .then(response => response.json())
+        .then(data => {
+            const favoriteWorkoutsList = document.getElementById('favorite-workouts-list');
+            favoriteWorkoutsList.innerHTML = ''; // Clear previous list
+    
+            data.favoriteWorkouts.forEach(workout => {
+                const li = document.createElement('li');
+                li.textContent = workout;
+                favoriteWorkoutsList.appendChild(li);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching favorite workouts:', error);
+        });
+    </script>
 <div class="container mx-auto mt-10">
     <div class="flex flex-col items-center bg-white p-5 rounded-lg shadow">
         <!-- Flash message -->
@@ -27,6 +45,9 @@
             <p><strong>Gender:</strong> {{ user.gender }}</p>
             <p><strong>Height:</strong> {{ user.height }} cm</p>
             <p><strong>Weight:</strong> {{ user.weight }} lbs</p>
+            <p><strong>Favorite Workout:</strong></p>
+            <ul id="favorite-workouts-list"></ul>
+
         </div>
         <div class="mt-6 flex flex-col space-y-4">
             <a href="{{ url_for('updateprofile') }}" class="text-blue-600 hover:underline">Update Profile</a>

@@ -1000,6 +1000,25 @@ def delete_account():
     # If the request method is GET, render the confirmation template
     return render_template('profile.html', user=user)
 
+favorite_workouts = set()  # Use a set to avoid duplicate entries
+
+@app.route('/toggle_favorite', methods=['POST'])  # Ensure the endpoint matches
+def toggle_favorite():
+    data = request.json
+    workout_name = data.get('workoutName')
+    is_favorite = data.get('isFavorite')
+
+    if is_favorite:
+        favorite_workouts.add(workout_name)
+    else:
+        favorite_workouts.discard(workout_name)
+
+    return jsonify(success=True)
+
+@app.route('/get_favorite_workouts')
+def get_favorite_workouts():
+    return jsonify({'favoriteWorkouts': list(favorite_workouts)})
+
 
 
 
