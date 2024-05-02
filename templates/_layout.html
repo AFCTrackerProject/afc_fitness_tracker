@@ -4,7 +4,7 @@
  <meta charset="UTF-8">
  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
  <meta content="width=device-width, initial-scale=1" name="viewport">
- <link rel="stylesheet" href="static\styles.css">
+ <link rel="stylesheet" href="static/styles.css">
  <link href="https://fonts.googleapis.com/css2?family=Montserrat&amp;display=swap" rel="stylesheet">
  <link rel="preconnect" href="https://fonts.gstatic.com">
  <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic&amp;display=swap" rel="stylesheet">
@@ -27,12 +27,15 @@
       display: flex;
       align-items: center;
    }
+   .navbar-logo {
+      height: 50px; /* Set the height of the logo */
+   }
  </style>
 </head>
 <body>
-<span>:::::::</span>
-<nav class="w-full px-6 py-4 bg-white shadow-md flex justify-center">
-  <div>
+<nav class="w-full px-6 py-4 bg-white shadow-md flex justify-between">
+  <div class="flex items-center">
+      <img src="static/images/Logo.png" alt="AFC Logo" class="navbar-logo">
       <a href="/" class="text-indigo-600 text-2xl font-bold">Fitness Tracker</a>
   </div>
   <div class="flex-grow flex justify-center items-center">
@@ -65,7 +68,9 @@
 {% endif %}
 
 </div>
+
 </nav>
+
 
 <!-- Flash Messages -->
 <div class="container mt-2">
