@@ -289,11 +289,25 @@ def clear_snack_logs_route():
         flash('Failed to clear snack logs', 'error')
     return redirect(url_for('macrotracker'))
 
-@app.route('/workouttracker', methods=['GET'])
+@app.route('/workouttracker', methods=['GET', 'POST'])
 def workouttracker():
     if 'userid' not in session:
             flash('You need to log in to use the workout tracker.', 'error')
             return redirect('/login')  
+    
+    if request.method == 'POST':
+        userid = session.get('userid')
+        starttime = request.form.get('start-time')
+        endtime = request.form.get('end-time')
+        exercisename = request.form.get('exerciseName')
+        
+        if insert_workout_log(userid, starttime, endtime, exercisename):
+            flash('Submission success!')
+
+
+     
+
+
     return render_template('workouttracker.html')
 
 
