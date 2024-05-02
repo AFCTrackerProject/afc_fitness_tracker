@@ -165,12 +165,14 @@
 
     function processExerciseData(muscle, data) {
     const exercisesContainer = document.querySelector('#exercisesList');
+    let favoriteWorkouts = JSON.parse(localStorage.getItem('favoriteWorkouts')) || {};
     let htmlContent = `<h2 style="text-transform: capitalize; font-size: 24px; font-weight: bold;">${muscle} Exercises</h2>`;
+
     data.exercises.forEach(exercise => {
         const instructions = exercise.instructions || 'No instructions provided.';
         const gifUrl = exercise.gifUrl || '/static/images/placeholder.gif'; // Placeholder if no GIF
-        const isFavorite = exercise.isFavorite; // This should be returned by your backend
-        
+        const isFavorite = favoriteWorkouts[exercise.name] === true; // Check if favorited
+
         htmlContent += `
 <div class="exercise-container">
     <div class="exercise-header">
@@ -187,6 +189,7 @@
     exercisesContainer.innerHTML = htmlContent;
     setupExerciseContainerToggle(); // Ensures setup is refreshed each time new content is loaded
 }
+
 
 
 
@@ -237,9 +240,14 @@ function toggleFavorite(element, workoutName) {
 
 function updateLocalStorage(workoutName, isFavorite) {
     let favoriteWorkouts = JSON.parse(localStorage.getItem('favoriteWorkouts')) || {};
-    favoriteWorkouts[workoutName] = isFavorite;
+    if (isFavorite) {
+        favoriteWorkouts[workoutName] = true; // Mark as favorite
+    } else {
+        delete favoriteWorkouts[workoutName]; // Remove from favorites
+    }
     localStorage.setItem('favoriteWorkouts', JSON.stringify(favoriteWorkouts));
 }
+
 
 function initializeStarIcons() {
     let favoriteWorkouts = JSON.parse(localStorage.getItem('favoriteWorkouts')) || {};
