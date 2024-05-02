@@ -117,6 +117,11 @@ def secret():
 # Forum homepage
 @app.route("/forum", methods=["GET", "POST"])
 def forum_home():
+    # Check if user is logged in before allowing access to the forum
+    if 'userid' not in session:
+        flash('You need to log in to use the forum feature.', 'error')
+        return redirect('/login')
+
     if request.method == "POST":
         # Add a new topic
         title = request.form.get("title")
@@ -136,6 +141,10 @@ def forum_home():
 @app.route("/forum/topic/<int:id>", methods=["GET", "POST"])
 def forum_topic(id):
     topic = Topic.query.get_or_404(id)
+    if 'userid' not in session:
+        flash('You need to log in to use the forum feature.', 'error')
+        return redirect('/login')
+    
     if request.method == "POST":
         # Add a new comment to the topic
         comment_text = request.form.get("comment")
