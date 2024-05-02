@@ -18,13 +18,15 @@ def get_workout_logs(pool):
 
     
 
-def insert_workout_log(userid, ExerciseName, Equipment, TargetMuscle, Duration, StartDateTime, EndDateTime, pool):
+def insert_workout_log(userid, starttime, endtime, exercisename):
+    pool = get_pool()
     with pool.connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute("""
-                   INSERT INTO WorkoutHistory (userid, exercisename, Equipment, TargetMuscle, Duration, StartDateTime, EndDateTime)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s)
-                   """, (userid, ExerciseName, Equipment, TargetMuscle, Duration, StartDateTime, EndDateTime))
+                   INSERT INTO WorkoutHistory (userid, exercisename, StartDateTime, EndDateTime)
+                   VALUES (%s, %s, %s, %s)
+                   """, (userid, exercisename, starttime, endtime))  # Ensure exercisename is in the correct position
     # Commit the transaction
     conn.commit()
+
 
