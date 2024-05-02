@@ -1,6 +1,8 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, abort, flash, get_flashed_messages, jsonify, session
 from dotenv import load_dotenv
+from datetime import datetime
+from sqlalchemy import DateTime
 from database import fitness_repo
 from database.fitness_repo import get_confirmation_token, verify_confirmation_token, get_user_by_id, generate_confirmation_token
 from flask_bcrypt import Bcrypt
@@ -31,17 +33,19 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)  # Initialize SQLAlchemy with your Flask app
 load_dotenv()
 
-# Define your models after initializing `db`
 class Topic(db.Model):
-    __tablename__ = 'topics'  # Good practice to explicitly name your tables
+    __tablename__ = 'topics'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), unique=True, nullable=False)
     description = db.Column(db.String(1024))
+    timestamp = db.Column(DateTime, default=datetime.utcnow, nullable=False)
+
 
 class Comment(db.Model):
     __tablename__ = 'comments'
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.String(1024), nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)  # Add timestamp column
     topic_id = db.Column(db.Integer, db.ForeignKey('topics.id'), nullable=False)
     topic = db.relationship('Topic', backref=db.backref('comments', lazy='dynamic'))
 
@@ -116,7 +120,6 @@ def secret():
     user = fitness_repo.get_user_by_id(userid)
     return render_template('profile.html', user=user)
 
-# Forum homepage
 @app.route("/forum", methods=["GET", "POST"])
 def forum_home():
     # Check if user is logged in before allowing access to the forum
@@ -136,8 +139,8 @@ def forum_home():
                 flash("A topic with this title already exists.", "error")
             else:
                 # Create a new topic since it does not exist
-                topic = Topic(title=title, description=description)
-                db.session.add(topic)
+                new_topic = Topic(title=title, description=description)
+                db.session.add(new_topic)
                 db.session.commit()
                 flash("Topic added successfully!", "success")
         else:
@@ -155,7 +158,6 @@ def forum_topic(id):
         return redirect('/login')
 
     topic = Topic.query.get_or_404(id) #ensures that topic exists or returns a 404
-
 
     if request.method == "POST":
         # Add a new comment to the topic
