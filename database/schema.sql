@@ -64,3 +64,10 @@ CREATE TABLE MacroTracker (
     Target_fatconsumed FLOAT,
     FOREIGN KEY (UserID) REFERENCES Users(UserID)
 );
+
+-- -- ALTER TABLE macrotracker
+-- ADD COLUMN target_caloriesconsumed FLOAT,
+-- ADD COLUMN target_proteinconsumed FLOAT,
+-- ADD COLUMN target_carbsconsumed FLOAT,
+-- ADD COLUMN target_fatsconsumed FLOAT;
+

@@ -18,13 +18,37 @@ import secrets
 from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros, save_target, clear_logs
 from database.workouttracker import insert_workout_log, get_workout_logs
 from flask_sqlalchemy import SQLAlchemy
-
-
+from flask_migrate import Migrate
+from dotenv import load_dotenv
 load_dotenv()
 
+
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///default.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)  # Initialize SQLAlchemy with your Flask app
+load_dotenv()
+
+# Define your models after initializing `db`
+class Topic(db.Model):
+    __tablename__ = 'topics'  # Good practice to explicitly name your tables
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), unique=True, nullable=False)
+    description = db.Column(db.String(1024))
+
+class Comment(db.Model):
+    __tablename__ = 'comments'
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.String(1024), nullable=False)
+    topic_id = db.Column(db.Integer, db.ForeignKey('topics.id'), nullable=False)
+    topic = db.relationship('Topic', backref=db.backref('comments', lazy='dynamic'))
+
 mail = Mail(app)
 sg = SendGridAPIClient(os.getenv('SENDGRIDKEY'))
+
+
 
 #client = Client("str", "str")
 
@@ -89,6 +113,42 @@ def secret():
     user = fitness_repo.get_user_by_id(userid)
     return render_template('secret.html', user=user)
 
+# memes
+# Forum homepage
+@app.route("/forum", methods=["GET", "POST"])
+def forum_home():
+    if request.method == "POST":
+        # Add a new topic
+        title = request.form.get("title")
+        description = request.form.get("description")
+        if title and description:  # Ensure non-empty submissions
+            topic = Topic(title=title, description=description)
+            db.session.add(topic)
+            db.session.commit()
+            flash("Topic added successfully!", "success")
+        else:
+            flash("Both title and description must be provided.", "error")
+
+    topics = Topic.query.all()  # Fetch all topics
+    return render_template("forumhome.html", topics=topics)
+
+# Specific topic and comments page
+@app.route("/forum/topic/<int:id>", methods=["GET", "POST"])
+def forum_topic(id):
+    topic = Topic.query.get_or_404(id)
+    if request.method == "POST":
+        # Add a new comment to the topic
+        comment_text = request.form.get("comment")
+        if comment_text:  # Ensure non-empty comment
+            comment = Comment(text=comment_text, topicId=id)
+            db.session.add(comment)
+            db.session.commit()
+            flash("Comment added successfully!", "success")
+        else:
+            flash("Comment cannot be empty.", "error")
+
+    comments = Comment.query.filter_by(topicId=id).all()
+    return render_template("forumpost.html", topic=topic, comments=comments)
 
 def calculate_progress(total, target):
     # Ensure target is a float
@@ -297,12 +357,6 @@ def workouttracker():
     return render_template('workouttracker.html')
 
 
-@app.get('/forum')
-def forum():
-    if 'userid' not in session:
-        flash('You need to log in to use the forum feature.','error')
-        return redirect('/login')
-    return render_template('forum.html')
 
 @app.get('/contact')
 def contact():
@@ -1053,4 +1107,3 @@ def exercises(muscle):
 if __name__ == "__main__":
     app.run(debug=True) 
 
-# Forum Porting
