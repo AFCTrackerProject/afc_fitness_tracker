@@ -113,7 +113,6 @@ def secret():
     user = fitness_repo.get_user_by_id(userid)
     return render_template('secret.html', user=user)
 
-# memes
 # Forum homepage
 @app.route("/forum", methods=["GET", "POST"])
 def forum_home():
@@ -123,40 +122,47 @@ def forum_home():
         return redirect('/login')
 
     if request.method == "POST":
-        # Add a new topic
         title = request.form.get("title")
         description = request.form.get("description")
-        if title and description:  # Ensure non-empty submissions
-            topic = Topic(title=title, description=description)
-            db.session.add(topic)
-            db.session.commit()
-            flash("Topic added successfully!", "success")
+        if title and description:
+            existing_topic = Topic.query.filter_by(title=title).first()  # Check if the topic already exists
+            if existing_topic:
+                flash("A topic with this title already exists.", "error")
+            else:
+                # Create a new topic since it does not exist
+                topic = Topic(title=title, description=description)
+                db.session.add(topic)
+                db.session.commit()
+                flash("Topic added successfully!", "success")
         else:
             flash("Both title and description must be provided.", "error")
 
     topics = Topic.query.all()  # Fetch all topics
     return render_template("forumhome.html", topics=topics)
 
+
 # Specific topic and comments page
 @app.route("/forum/topic/<int:id>", methods=["GET", "POST"])
 def forum_topic(id):
-    topic = Topic.query.get_or_404(id)
     if 'userid' not in session:
         flash('You need to log in to use the forum feature.', 'error')
         return redirect('/login')
-    
+
+    topic = Topic.query.get_or_404(id) #ensures that topic exists or returns a 404
+
+
     if request.method == "POST":
         # Add a new comment to the topic
         comment_text = request.form.get("comment")
         if comment_text:  # Ensure non-empty comment
-            comment = Comment(text=comment_text, topicId=id)
+            comment = Comment(text=comment_text, topic_id=id)
             db.session.add(comment)
             db.session.commit()
             flash("Comment added successfully!", "success")
         else:
             flash("Comment cannot be empty.", "error")
 
-    comments = Comment.query.filter_by(topicId=id).all()
+    comments = Comment.query.filter_by(topic_id=id).all()
     return render_template("forumpost.html", topic=topic, comments=comments)
 
 def calculate_progress(total, target):

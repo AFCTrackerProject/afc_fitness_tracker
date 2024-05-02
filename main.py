@@ -65,10 +65,3 @@ def topic(id):
 app.run(debug=True, port=5001)
 
 
-# # Old forum routing
-# @app.get('/forum')
-# def forum():
-#     if 'userid' not in session:
-#         flash('You need to log in to use the forum feature.','error')
-#         return redirect('/login')
-#     return render_template('forum.html')
