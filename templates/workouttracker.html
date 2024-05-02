@@ -35,7 +35,7 @@
       </div>
 
 
-    <input type="submit" value="Submit" style="background-color: #f4f4f4; border: 1px solid #ccc; padding: 10px 20px; cursor: pointer; border-radius: 5px;">
+    <input type="submit" value="Submit" style="display: block; margin: left; background-color: #7b38d8; padding: 20px; width: 200px; color: #ffffff; text-align: center; text-decoration: none; border-radius: 5px;">
     </form>
   </div>
 
@@ -43,19 +43,30 @@
   <!-- Right side content - Exercise Log Table -->
   <div class="flex-1">
     <h2 class="text-3xl font-bold text-gray-800 mb-2">Exercise Log</h2>
+    <form action="{{ url_for('clear_workout_logs_route') }}" method="post">
+      <button type="submit" class="clear-button">Clear Workout Logs</button>
+    </form>
+    <br>
     <table id="exerciseTable" class="w-full">
       <thead>
         <tr>
-          <th>List of Exercises Completed</th>
+          <th>Start Time</th>
+          <th>End Time</th>
+          <th>Exercise Completed</th>
         </tr>
       </thead>
       <tbody>
-        <!-- Rows added dynamically here -->
-      </tbody>
+        {% for log in workout_logs %}
+        <tr>
+          <td>{{ log.startdatetime }}</td>
+          <td>{{ log.enddatetime }}</td>
+          <td>{{ log.exercisename }}</td>
+        </tr>
+    {% endfor %}
+  </tbody>
     </table>
   </div>
 </div>
-<!-- Exercise Log Table -->
 
 
 <script>
@@ -175,23 +186,25 @@
 
 
   function addToExerciseLog(name) {
-    const tableBody = document.querySelector('#exerciseTable tbody');
-
-    // Check if the exercise is already added
-    const existingEntries = Array.from(tableBody.querySelectorAll('tr')).map(row => row.querySelector('td').textContent.trim());
-    if (existingEntries.includes(name)) {
-      console.log('This exercise has already been added.');  // Use console.log for debugging
-      return; // Stop adding if it's a duplicate
+  // Send an HTTP POST request to Flask with the exercise name
+  fetch('/add_exercise', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ exercisename: name })
+  })
+  .then(response => {
+    if (response.ok) {
+      console.log('Exercise name sent successfully to Flask.');
+    } else {
+      console.error('Failed to send exercise name to Flask.');
     }
-
-    // Create a new row and cell for the exercise name
-    const row = document.createElement('tr');
-    const nameCell = document.createElement('td');
-    nameCell.textContent = name;
-    row.appendChild(nameCell);  // Append the cell to the row
-
-    tableBody.appendChild(row);  // Append the row to the table body
-  }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  });
+}
 </script>
 
 <style>
@@ -297,6 +310,16 @@
     width: 100%;
     overflow-x: auto;
   }
+  .clear-button {
+    background-color: #ff0000; /* Red background color */
+    color: #ffffff; /* White text color */
+    padding: 5px 10px; /* Smaller padding for the button */
+    border: none; /* No border */
+    border-radius: 5px; /* Rounded corners */
+    cursor: pointer; /* Cursor style */
+    font-size: 14px; /* Smaller font size */
+    transition: background-color 0.3s ease; /* Smooth transition for background color */
+}    
 </style>
 
 

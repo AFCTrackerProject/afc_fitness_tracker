@@ -16,9 +16,8 @@ import boto3
 import requests 
 import secrets
 from macrotracker import get_macros_by_meal_type, get_all_macros, create_macros, save_target, clear_logs
-from database.workouttracker import insert_workout_log, get_workout_logs
+from database.workouttracker import insert_workout_log, get_workout_logs, clear_workout_logs
 from flask_sqlalchemy import SQLAlchemy
-
 
 load_dotenv()
 
@@ -294,21 +293,38 @@ def workouttracker():
     if 'userid' not in session:
             flash('You need to log in to use the workout tracker.', 'error')
             return redirect('/login')  
-    
+        
     if request.method == 'POST':
         userid = session.get('userid')
+        exercisename = session.get('exercisename')
         starttime = request.form.get('start-time')
         endtime = request.form.get('end-time')
-        exercisename = request.form.get('exerciseName')
         
-        if insert_workout_log(userid, starttime, endtime, exercisename):
-            flash('Submission success!')
+        insert_workout_log(userid, starttime, endtime, exercisename)
 
+    
+    workout_logs = get_workout_logs()
 
-     
+    return render_template('workouttracker.html', workout_logs=workout_logs)
 
+@app.route('/add_exercise', methods=['POST'])
+def add_exercise():
+    exercisename = request.json.get('exercisename')
+    print('Received exercise name:', exercisename)
+    session['exercisename'] = exercisename  # Store exercise name in session
+    return 'Exercise name received by Flask'    
 
-    return render_template('workouttracker.html')
+@app.route('/clear_workout_logs', methods=['POST'])
+def clear_workout_logs_route():
+    if request.method == 'POST':
+        userid = session.get('userid')
+        
+        if clear_workout_logs(userid):
+            flash('Workout logs cleared successfully.', 'success')
+        else:
+            flash('Failed to clear workout logs.', 'error')
+    
+    return redirect(url_for('workouttracker'))
 
 
 @app.get('/forum')

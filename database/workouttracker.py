@@ -5,7 +5,8 @@ from flask import flash, session
 from psycopg.rows import dict_row
 
 
-def get_workout_logs(pool):
+def get_workout_logs():
+    pool = get_pool()
     with pool.connection() as conn:
         conn.row_factory = dict_row  # Set row factory to return rows as dictionaries
         with conn.cursor() as cur:
@@ -29,4 +30,17 @@ def insert_workout_log(userid, starttime, endtime, exercisename):
     # Commit the transaction
     conn.commit()
 
-
+def clear_workout_logs(userid):
+    try:
+        pool = get_pool()  
+        with pool.connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                               DELETE FROM workouthistory
+                               WHERE userid = %s
+                               """, (userid,))
+                conn.commit()
+        return True  
+    except Exception as e:
+        print("Error:", e)
+        return False  
